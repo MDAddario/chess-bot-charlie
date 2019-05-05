@@ -1,0 +1,6 @@
+pawn = 100
+rook = 500
+knight = 300
+bishop = 320
+queen = 900
+king = 20000
