@@ -14,11 +14,7 @@ int main(){
 	Board* board = (Board*)malloc(sizeof(Board));
 	BoardReset(board);
 
-	// For Daniel
-	total_of_218_moves(global, board);
-	return 0;
-
-	// Test game
+	// Practice game
 	Move move;
 	Move* moveList;
 	U16 length;
@@ -27,7 +23,9 @@ int main(){
 	for(;;){
 
 		BoardPrint(board);
-		moveList = pseudoMoveGenerator(global, board, &length);
+		movePrinter(global, board);
+		printf("Number of checks: %hu\n", isInCheck(global, board, 64, YES));
+		moveList = pseudoMoveGenerator(global, board, &length, isInCheck(global, board, 64, YES));
 
 		scanf("%s", input);
 

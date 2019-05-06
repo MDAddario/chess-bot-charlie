@@ -1,3 +1,21 @@
+#define ON  1
+#define OFF 0
+
+#define YES 1
+#define NO 	0
+
+#define NULL_PIECE  6
+
+#define CAPTURE_BIT 2
+#define PROMO_BIT   3
+
+#define K_W_BIT 4
+#define K_B_BIT 60
+#define R_W_L_BIT 0
+#define R_W_S_BIT 7
+#define R_B_L_BIT 56
+#define R_B_S_BIT 63
+
 /*	Bitboard chessboard layout (feat. original chess coords)
  *	
  *	56	57	58	59	60	61	62	63		8
@@ -195,7 +213,7 @@ U16 isRankFileInBounds(U16, U16);
  */
 
 // Return moveList without validating for check
-Move* pseudoMoveGenerator(Global*, Board*, U16*);
+Move* pseudoMoveGenerator(Global*, Board*, U16*, U16);
 
 // Basis vectors for scanning sliding moves
 S16 delta_rank[8];
@@ -204,12 +222,15 @@ S16 delta_file[8];
 // Configure all attributes of Move struct
 void configureMove(Move*, U16, U16, U16, U16, U16);
 
-// Execute move and increment ply, toggle castle and EP flags
-U16 makeMove(Global*, Board*, Move);
+// Determine if move is legal
+U16 validateMove(Global*, Board*, Move);
 /* Return codes:
  * 0: Illegal move
  * 1: Legal move
  */
+
+// Execute move and increment ply, toggle castle and EP flags
+void makeMove(Global*, Board*, Move);
 
 // Verify if current turn player in check
 U16 isInCheck(Global*, Board*, U16, U16);
@@ -217,6 +238,8 @@ U16 isInCheck(Global*, Board*, U16, U16);
  * 0: Not in check
  * 1: Check (can capture checking piece, intercept, or move king)
  * 2: Double check (must move king to get out of check)
+ *
+ * Input king_bit = 64 if king position unknown
  */
 
 // Convert move to UCI string
@@ -233,12 +256,15 @@ void total_of_218_moves(Global*, Board*);
 * - validateMove()
 * - legalMoveGenerator()
 * - Add a validate check flag in makeMove()
+* - undoMove()
 * - perft()
+* 
 * - 3 fold repetition
 * - 50 move draw
+* - insufficientMaterial()
 *
+* - Manage #define collection
 * - Compress moveToUCI by using the ascii values of a-h and 1-8
-* - Implement that double check forces the king to move
 * - Determine checkmate and stalemate status
 *
 * - Consider compressing memory in Board and Move structs
@@ -247,14 +273,14 @@ void total_of_218_moves(Global*, Board*);
 
 // Inside makeMove():
 
-	/*
-	CONSIDER A MORE EFFICIENT PIECE MOVEMENT, i.e. HAVE
-	A BITMASK THAT HAS bit_from AND bit_to AS THE ONLY
-	1 BITS, AND XOR THAT MASK WITH THE CORRESPONDING
-	colorBB and pieceBB FOR THE MOVING PIECE
-	*/
+/*
+CONSIDER A MORE EFFICIENT PIECE MOVEMENT, i.e. HAVE
+A BITMASK THAT HAS bit_from AND bit_to AS THE ONLY
+1 BITS, AND XOR THAT MASK WITH THE CORRESPONDING
+colorBB and pieceBB FOR THE MOVING PIECE
+*/
 
-	/*
-	CONSIDER EMBEDDING turn, color, opp_color INTO BOARD
-	STATE. THEN, ONE WOULD UPDATE THEM IN makeMove
-	*/
+/*
+CONSIDER EMBEDDING turn, color, opp_color INTO BOARD
+STATE. THEN, ONE WOULD UPDATE THEM IN makeMove
+*/
