@@ -4,18 +4,6 @@
 #define YES 1
 #define NO 	0
 
-#define NULL_PIECE  6
-
-#define CAPTURE_BIT 2
-#define PROMO_BIT   3
-
-#define K_W_BIT 4
-#define K_B_BIT 60
-#define R_W_L_BIT 0
-#define R_W_S_BIT 7
-#define R_B_L_BIT 56
-#define R_B_S_BIT 63
-
 /*	Bitboard chessboard layout (feat. original chess coords)
  *	
  *	56	57	58	59	60	61	62	63		8
@@ -116,7 +104,8 @@ enum BBIndex{
 	Queen,		// 4
 	King, 		// 5
 	White, 		// 6
-	Black		// 7
+	Black,		// 7
+	Null_piece 	// 8
 };
 
 // Turn indicator
@@ -215,6 +204,9 @@ U16 isRankFileInBounds(U16, U16);
 // Return moveList without validating for check
 Move* pseudoMoveGenerator(Global*, Board*, U16*, U16);
 
+// Return moveList while validating for check
+Move* legalMoveGenerator(Global*, Board*, U16*, U16);
+
 // Basis vectors for scanning sliding moves
 S16 delta_rank[8];
 S16 delta_file[8];
@@ -230,7 +222,14 @@ U16 validateMove(Global*, Board*, Move);
  */
 
 // Execute move and increment ply, toggle castle and EP flags
-void makeMove(Global*, Board*, Move);
+U16 makeMove(Global*, Board*, Move, U16);
+/* Return codes:
+ * 1: Move successful
+ * 0: Move illegal (only when do_validate == 1)
+ */
+
+// Undo move, reset ply, casttle and EP flags
+void undoMove(Global*, Board*, Move, U16, U16);
 
 // Verify if current turn player in check
 U16 isInCheck(Global*, Board*, U16, U16);
@@ -242,30 +241,28 @@ U16 isInCheck(Global*, Board*, U16, U16);
  * Input king_bit = 64 if king position unknown
  */
 
+// (PERF)ormance (T)est to test move generation, up to 3-fold and 50-move
+U64 perft(Global*, Board*, U16);
+
 // Convert move to UCI string
 char* moveToUCI(Move);
 
 // Print out complete moveList in full detail
 void movePrinter(Global*, Board*);
 
-// Test to see if pseudoMoveGenerator works properly
-void total_of_218_moves(Global*, Board*);
-
 /***************************************
 * TO DO LIST:
-* - validateMove()
-* - legalMoveGenerator()
-* - Add a validate check flag in makeMove()
-* - undoMove()
-* - perft()
-* 
+*
 * - 3 fold repetition
 * - 50 move draw
 * - insufficientMaterial()
+* - Determine checkmate and stalemate status
 *
+* - Change variables to use_this_type
+* - Change functions to functionLikeThis()
+* 
 * - Manage #define collection
 * - Compress moveToUCI by using the ascii values of a-h and 1-8
-* - Determine checkmate and stalemate status
 *
 * - Consider compressing memory in Board and Move structs
 *
