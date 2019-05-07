@@ -530,7 +530,8 @@ S16 delta_file[8] = {1, 1, 0, -1, -1, -1, 0, 1};
 
 Move* legalMoveGenerator(Global* global, Board* board, U16* real_length, U16 num_checks){
 
-	Move *pseudo_list, *legal_list;
+	Move* pseudo_list; 
+	Move* legal_list;
 	U16 pseudo_length;
 
 	pseudo_list = pseudoMoveGenerator(global, board, &pseudo_length, num_checks);
@@ -540,10 +541,18 @@ Move* legalMoveGenerator(Global* global, Board* board, U16* real_length, U16 num
 
 	for(U16 i = 0; i < pseudo_length; i++){
 
-		if (validateMove(global, board, pseudo_list[i]))
-			legal_list[(*real_length)++] = pseudo_list[i];
+		if (validateMove(global, board, pseudo_list[i])){
+
+			configureMove(legal_list + *real_length, pseudo_list[i].bit_from,
+													 pseudo_list[i].bit_to,
+													 pseudo_list[i].move_type,
+													 pseudo_list[i].moving_piece,
+													 pseudo_list[i].captured_piece)
+			(*real_length)++;
+		}
 	}
 
+	free(pseudo_list);
 	return legal_list;
 }
 

@@ -257,6 +257,8 @@ void movePrinter(Global*, Board*);
 * - 50 move draw
 * - insufficientMaterial()
 * - Determine checkmate and stalemate status
+* - FEN reader
+* - Algebraic reader
 *
 * - Change variables to use_this_type
 * - Change functions to functionLikeThis()
