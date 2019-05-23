@@ -903,10 +903,10 @@ U64 perft(Global* global, Board* board, U16 depth){
 
 	Move* move_list;
 	U16 length, castling_rights, EP_files;
-	U64 total_nodes;
+	U64 total_nodes = 0;
 
 	move_list = legalMoveGenerator(global, board, &length, isInCheck(global, board, 64, YES));
-
+	
 	// Base case
 	if (depth == 1)
 		return length;
@@ -1021,7 +1021,7 @@ void movePrinter(Global* global, Board* board){
 	Move* moveList;
 	U16 length;
 	char UCI_string[30], moved[30], move_type[30], promo[30], captured[30];
-	moveList = pseudoMoveGenerator(global, board, &length, isInCheck(global, board, 64, YES));
+	moveList = legalMoveGenerator(global, board, &length, isInCheck(global, board, 64, YES));
 
 	for(int i = 0; i < length; i++){
 

@@ -3,7 +3,7 @@
 #include "chess_framework.h"
 
 // The main attraction!
-int main(){
+int main(int argc, char* argv[]){
 
 	// Load global chess information
 	Global* global = (Global*)malloc(sizeof(Global));
@@ -14,7 +14,12 @@ int main(){
 	BoardReset(board);
 
 	// Perft testing
-	U16 depth = 2;
+	if (argc < 2){
+		printf("Please provide depth for perft() function.\n");
+		return -1;
+	}
+
+	U16 depth = atoi(argv[1]);
 	printf("For a depth of %hu, perft() grants %llu total moves.\n", depth, perft(global, board, depth));
 	return 0;
 }
