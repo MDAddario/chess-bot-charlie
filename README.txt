@@ -32,4 +32,6 @@ bit_from: The bit a moving piece starts on
 bit_to: The bit a moving piece ends on
 
 TTable: Transposition table
-	Keeps track of positions already analzed
+	Keeps track of positions already analzed.
+	
+perft: PERFormance Test

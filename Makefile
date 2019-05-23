@@ -5,7 +5,7 @@ HDS = ${SRCS:.c=.h}
 all: main
 
 main: main.c ${OBJS}
-	gcc main.c ${OBJS} -o main
+	gcc main.c ${OBJS} -o main -g
 
 .c.o: ${SRCS} ${HDS}
 	gcc -c $<

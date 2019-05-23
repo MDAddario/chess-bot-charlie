@@ -1,3 +1,9 @@
+#define ON  1
+#define OFF 0
+
+#define YES 1
+#define NO 	0
+
 /*	Bitboard chessboard layout (feat. original chess coords)
  *	
  *	56	57	58	59	60	61	62	63		8
@@ -98,7 +104,8 @@ enum BBIndex{
 	Queen,		// 4
 	King, 		// 5
 	White, 		// 6
-	Black		// 7
+	Black,		// 7
+	Null_piece 	// 8
 };
 
 // Turn indicator
@@ -195,7 +202,10 @@ U16 isRankFileInBounds(U16, U16);
  */
 
 // Return moveList without validating for check
-Move* pseudoMoveGenerator(Global*, Board*, U16*);
+Move* pseudoMoveGenerator(Global*, Board*, U16*, U16);
+
+// Return moveList while validating for check
+Move* legalMoveGenerator(Global*, Board*, U16*, U16);
 
 // Basis vectors for scanning sliding moves
 S16 delta_rank[8];
@@ -204,12 +214,22 @@ S16 delta_file[8];
 // Configure all attributes of Move struct
 void configureMove(Move*, U16, U16, U16, U16, U16);
 
-// Execute move and increment ply, toggle castle and EP flags
-U16 makeMove(Global*, Board*, Move);
+// Determine if move is legal
+U16 validateMove(Global*, Board*, Move);
 /* Return codes:
  * 0: Illegal move
  * 1: Legal move
  */
+
+// Execute move and increment ply, toggle castle and EP flags
+U16 makeMove(Global*, Board*, Move, U16);
+/* Return codes:
+ * 1: Move successful
+ * 0: Move illegal (only when do_validate == 1)
+ */
+
+// Undo move, reset ply, casttle and EP flags
+void undoMove(Global*, Board*, Move, U16, U16);
 
 // Verify if current turn player in check
 U16 isInCheck(Global*, Board*, U16, U16);
@@ -217,7 +237,12 @@ U16 isInCheck(Global*, Board*, U16, U16);
  * 0: Not in check
  * 1: Check (can capture checking piece, intercept, or move king)
  * 2: Double check (must move king to get out of check)
+ *
+ * Input king_bit = 64 if king position unknown
  */
+
+// (PERF)ormance (T)est to test move generation, up to 3-fold and 50-move
+U64 perft(Global*, Board*, U16);
 
 // Convert move to UCI string
 char* moveToUCI(Move);
@@ -225,21 +250,21 @@ char* moveToUCI(Move);
 // Print out complete moveList in full detail
 void movePrinter(Global*, Board*);
 
-// Test to see if pseudoMoveGenerator works properly
-void total_of_218_moves(Global*, Board*);
-
 /***************************************
 * TO DO LIST:
-* - validateMove()
-* - legalMoveGenerator()
-* - Add a validate check flag in makeMove()
-* - perft()
+*
 * - 3 fold repetition
 * - 50 move draw
-*
-* - Compress moveToUCI by using the ascii values of a-h and 1-8
-* - Implement that double check forces the king to move
+* - insufficientMaterial()
 * - Determine checkmate and stalemate status
+* - FEN reader
+* - Algebraic reader
+*
+* - Change variables to use_this_type
+* - Change functions to functionLikeThis()
+* 
+* - Manage #define collection
+* - Compress moveToUCI by using the ascii values of a-h and 1-8
 *
 * - Consider compressing memory in Board and Move structs
 *
@@ -247,14 +272,14 @@ void total_of_218_moves(Global*, Board*);
 
 // Inside makeMove():
 
-	/*
-	CONSIDER A MORE EFFICIENT PIECE MOVEMENT, i.e. HAVE
-	A BITMASK THAT HAS bit_from AND bit_to AS THE ONLY
-	1 BITS, AND XOR THAT MASK WITH THE CORRESPONDING
-	colorBB and pieceBB FOR THE MOVING PIECE
-	*/
+/*
+CONSIDER A MORE EFFICIENT PIECE MOVEMENT, i.e. HAVE
+A BITMASK THAT HAS bit_from AND bit_to AS THE ONLY
+1 BITS, AND XOR THAT MASK WITH THE CORRESPONDING
+colorBB and pieceBB FOR THE MOVING PIECE
+*/
 
-	/*
-	CONSIDER EMBEDDING turn, color, opp_color INTO BOARD
-	STATE. THEN, ONE WOULD UPDATE THEM IN makeMove
-	*/
+/*
+CONSIDER EMBEDDING turn, color, opp_color INTO BOARD
+STATE. THEN, ONE WOULD UPDATE THEM IN makeMove
+*/
