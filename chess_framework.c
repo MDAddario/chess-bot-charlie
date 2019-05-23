@@ -530,14 +530,6 @@ Move* legalMoveGenerator(Global* global, Board* board, U16* real_length, U16 num
 
 		if (validateMove(global, board, pseudo_list[i])){
 
-			/*
-			configureMove(legal_list + *real_length, pseudo_list[i].bit_from,
-													 pseudo_list[i].bit_to,
-													 pseudo_list[i].move_type,
-													 pseudo_list[i].moving_piece,
-													 pseudo_list[i].captured_piece)
-			*/
-
 			legal_list[*real_length] = pseudo_list[i];
 			(*real_length)++;
 		}
@@ -899,16 +891,57 @@ U16 isInCheck(Global* global, Board* board, U16 king_bit, U16 do_knights){
 	return checks;
 }
 
-U64 perft(Global* global, Board* board, U16 depth){
+U64 perft(Global* global, Board* board, U64** results, U16 current_depth, U16 max_depth){
+
+	/*
+	https://www.chessprogramming.org/Perft_Results
+	*/
 
 	Move* move_list;
 	U16 length, castling_rights, EP_files;
 	U64 total_nodes = 0;
 
 	move_list = legalMoveGenerator(global, board, &length, isInCheck(global, board, 64, YES));
-	
+
+	// Update results array
+	for(U16 i = 0; i < length; i++){
+
+		// Nodes
+		results[current_depth][0] += 1;
+
+		// Captures
+		if (U16GetBit(move_list[i].move_type, 0, 2))
+			results[current_depth][1] += 1;
+
+		// EP
+		if (move_list[i].move_type == EPCapture)
+			results[current_depth][2] += 1;
+
+		// Castles
+		if (move_list[i].move_type == ShortCastle || move_list[i].move_type == LongCastle)
+			results[current_depth][3] += 1;
+
+		// Promotions
+		if (move_list[i].move_type >= RPromo && move_list[i].move_type <= QPromoCapture)
+			results[current_depth][4] += 1;
+
+		// Checks
+		(board->ply)++;
+		U16 num_checks = isInCheck(global, board, 64, YES);
+		if (num_checks)
+			results[current_depth][5] += 1;
+		(board->ply)--;
+
+		// Double checks
+		if (num_checks == 2)
+			results[current_depth][6] += 1;
+
+		// Checkmates
+
+	}
+
 	// Base case
-	if (depth == 1)
+	if (current_depth == max_depth-1)
 		return length;
 
 	// Not leaf node
@@ -918,11 +951,46 @@ U64 perft(Global* global, Board* board, U16 depth){
 	for(U16 i = 0; i < length; i++){
 
 		makeMove(global, board, move_list[i], NO);
-		total_nodes += perft(global, board, depth-1);
+		total_nodes += perft(global, board, results, current_depth + 1, max_depth);
 		undoMove(global, board, move_list[i], castling_rights, EP_files);
 
 	}
 	return total_nodes;
+}
+
+void initPerft(Global* global, Board* board, U16 max_depth){
+
+	// Store perft() results in array
+	U64** results = (U64**)malloc(max_depth * sizeof(U64*));
+	for(U16 i = 0; i < max_depth; i++)
+		results[i] = (U64*)calloc(8, sizeof(U64));
+
+	/*	Result codes:
+	 *	0: Nodes
+	 *	1: Captures
+	 *	2: EPs
+	 *	3: Castles
+	 *	4: Promotions
+	 *	5: Checks
+	 *	6: Double checks
+	 *	7: Checkmates
+	 */
+
+	perft(global, board, results, 0, max_depth);
+
+	// Print output
+	printf("Depth \t Notes \t Captures \t EPs \t Castles \t Promos \t Checks \t Double Checks \t Checkmates\n");
+	for(U16 i = 0; i < max_depth; i++)
+		printf("%u \t %llu \t %llu \t\t %llu \t %llu \t\t %llu \t\t %llu \t\t %llu \t\t %llu\n",
+				i+1, results[i][0], results[i][1], results[i][2], results[i][3], 
+				results[i][4], results[i][5], results[i][6], results[i][7]);
+
+	// Free memory
+	for(U16 i = 0; i < max_depth; i++)
+		free(results[i]);
+	free(results);
+
+	return;
 }
 
 char* moveToUCI(Move move){

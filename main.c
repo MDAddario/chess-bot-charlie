@@ -18,8 +18,6 @@ int main(int argc, char* argv[]){
 		printf("Please provide depth for perft() function.\n");
 		return -1;
 	}
-
-	U16 depth = atoi(argv[1]);
-	printf("For a depth of %hu, perft() grants %llu total moves.\n", depth, perft(global, board, depth));
+	initPerft(global, board, atoi(argv[1]));
 	return 0;
 }
