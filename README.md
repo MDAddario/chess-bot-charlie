@@ -30,8 +30,5 @@ Double step: Pawn moving two squares from initial rank
 bit_from: The bit a moving piece starts on
 
 bit_to: The bit a moving piece ends on
-
-TTable: Transposition table
-	Keeps track of positions already analzed.
 	
 perft: PERFormance Test

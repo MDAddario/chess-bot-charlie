@@ -14,7 +14,7 @@ int main(){
 	BoardReset(board);
 
 	// Perft testing
-	U16 depth = 1;
+	U16 depth = 2;
 	printf("For a depth of %hu, perft() grants %llu total moves.\n", depth, perft(global, board, depth));
 	return 0;
 }

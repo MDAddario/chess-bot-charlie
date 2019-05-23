@@ -530,11 +530,15 @@ Move* legalMoveGenerator(Global* global, Board* board, U16* real_length, U16 num
 
 		if (validateMove(global, board, pseudo_list[i])){
 
+			/*
 			configureMove(legal_list + *real_length, pseudo_list[i].bit_from,
 													 pseudo_list[i].bit_to,
 													 pseudo_list[i].move_type,
 													 pseudo_list[i].moving_piece,
 													 pseudo_list[i].captured_piece)
+			*/
+
+			legal_list[*real_length] = pseudo_list[i];
 			(*real_length)++;
 		}
 	}
