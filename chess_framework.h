@@ -191,9 +191,6 @@ void GlobalLoadBBs(Global*);
 char* filenames_capture[2][6];
 char* filenames_quiet[2][6];
 
-// Test to see if all elements loaded properly (debug code)
-void GlobalTest(Global*);
-
 // Check if rank and file within board dims
 U16 isRankFileInBounds(U16, U16);
 /* Return codes:
@@ -221,17 +218,17 @@ U16 validateMove(Global*, Board*, Move);
  * 1: Legal move
  */
 
-// Execute move and increment ply, toggle castle and EP flags
+// Execute move and increment ply, update castle and EP flags
 U16 makeMove(Global*, Board*, Move, U16);
 /* Return codes:
  * 1: Move successful
  * 0: Move illegal (only when do_validate == 1)
  */
 
-// Undo move, reset ply, casttle and EP flags
+// Undo move, reset ply, castling, and EP flags
 void undoMove(Global*, Board*, Move, U16, U16);
 
-// Verify if current turn player in check
+// Verify if current-turn player in check
 U16 isInCheck(Global*, Board*, U16, U16);
 /* Return codes:
  * 0: Not in check
@@ -253,6 +250,9 @@ void movePrinter(Global*, Board*);
 /***************************************
 * TO DO LIST:
 *
+* - Make perft() work
+* 		- Track EP and caslting flags
+*
 * - 3 fold repetition
 * - 50 move draw
 * - insufficientMaterial()
@@ -260,8 +260,15 @@ void movePrinter(Global*, Board*);
 * - FEN reader
 * - Algebraic reader
 *
+* - Make sure I free() where I malloc() or calloc()
 * - Change variables to use_this_type
 * - Change functions to functionLikeThis()
+* - Reorder functions in chess_framework files
+*
+* - Remove globalTest()
+* - Add standardized perft() benchmark
+*
+* - Make sure all declared variables in pseudoMoveGenerator() are used
 * 
 * - Manage #define collection
 * - Compress moveToUCI by using the ascii values of a-h and 1-8

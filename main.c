@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include "chess_framework.h"
 
 // The main attraction!
@@ -16,6 +15,6 @@ int main(){
 
 	// Perft testing
 	U16 depth = 1;
-	printf("For a depth of %hu, perft() grants %llu\n", depth, perft(global, board, depth));
+	printf("For a depth of %hu, perft() grants %llu total moves.\n", depth, perft(global, board, depth));
 	return 0;
 }

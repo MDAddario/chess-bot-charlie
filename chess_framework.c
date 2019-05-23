@@ -85,8 +85,6 @@ void BoardReset(Board* board){
 	setPiece(board, Black, Rook,   7, 7, ON);
 
 	// Castling rights
-	memset(&(board->castlingRights), OFF, 2);
-
 	for (U16 i = 0; i < 4; i++)
 		U16SetBit(&(board->castlingRights), 0, i, ON);
 
@@ -232,20 +230,9 @@ char* filenames_quiet[2][6] = {"black_pawn_quiet.txt",
 								"white_queen_quiet.txt",
 								"white_king_quiet.txt"};
 
-void GlobalTest(Global* global){
-
-	printf("\nKnight captures:\n");
-	BBPrint(global->captureBB[WhiteTurn][Knight][33]);
-
-	printf("\nKnight quiet moves:\n");
-	BBPrint(global->quietBB[BlackTurn][Knight][33]);
-
-	return;
-}
-
 U16 isRankFileInBounds(U16 rank, U16 file){
 
-	return rank < 8 && file < 8;
+	return rank < 8 && file < 8;	// Thanks to unsigned overflow
 }
 
 Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_checks){
@@ -295,7 +282,7 @@ Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_che
 		long_key = LongB;
 	}
 
-	// If double check, king MUST move
+	// If in double check, king MUST move
 	if (num_checks == 2){
 
 		for(U16 bit_from = 0; bit_from < 64; bit_from++)
@@ -460,7 +447,7 @@ Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_che
 						capture_BB = global->captureBB[turn][piece][bit_from] & board->piecesBB[opp_color];
 					}
 
-					// Bishop, rook, queen moves
+					// Bishop, rook, queen moves (the sliding pieces)
 					else{
 
 						quiet_BB = 0ULL;
@@ -537,7 +524,7 @@ Move* legalMoveGenerator(Global* global, Board* board, U16* real_length, U16 num
 	pseudo_list = pseudoMoveGenerator(global, board, &pseudo_length, num_checks);
 	legal_list = (Move*)malloc(pseudo_length * sizeof(Move));
 
-	real_length = 0;
+	*real_length = 0;
 
 	for(U16 i = 0; i < pseudo_length; i++){
 
@@ -587,7 +574,7 @@ U16 validateMove(Global* global, Board* board, Move move){
 
 	// Update moving piece
 	setPiece(board, color, move.moving_piece, 0, move.bit_from, OFF);
-	setPiece(board, color, move.moving_piece, 0, move.bit_to, ON);
+	setPiece(board, color, move.moving_piece, 0, move.bit_to,    ON);
 
 	// Check for captured piece
 	if (U16GetBit(move.move_type, 0, 2))
@@ -606,14 +593,16 @@ U16 validateMove(Global* global, Board* board, Move move){
 		// Short castle
 		if (move.move_type == ShortCastle){
 
-			if (isInCheck(global, board, castle_bit + 1, YES) || isInCheck(global, board, castle_bit + 2, YES))
+			if (isInCheck(global, board, castle_bit + 1, YES) || 
+				isInCheck(global, board, castle_bit + 2, YES))
 				isLegal = 0;
 		}
 
 		// Long castle
 		else if (move.move_type == LongCastle){
 
-			if (isInCheck(global, board, castle_bit - 1, YES) || isInCheck(global, board, castle_bit - 2, YES))
+			if (isInCheck(global, board, castle_bit - 1, YES) || 
+				isInCheck(global, board, castle_bit - 2, YES))
 				isLegal = 0;
 		}
 
@@ -627,7 +616,7 @@ U16 validateMove(Global* global, Board* board, Move move){
 
 	// Revert changes
 	setPiece(board, color, move.moving_piece, 0, move.bit_from, ON);
-	setPiece(board, color, move.moving_piece, 0, move.bit_to, OFF);
+	setPiece(board, color, move.moving_piece, 0, move.bit_to,  OFF);
 
 	if (U16GetBit(move.move_type, 0, 2))
 		setPiece(board, opp_color, move.captured_piece, 0, move.bit_to, ON);
@@ -637,14 +626,14 @@ U16 validateMove(Global* global, Board* board, Move move){
 
 U16 makeMove(Global* global, Board* board, Move move, U16 do_validate){
 
-	// Local variables
-	U16 turn, color, opp_color, file, castle_bit;
-	S16 pawn_forward_bitshift;
-
 	// Ensure move is legal
 	if (do_validate)
 		if (!validateMove(global, board, move))
 			return 0;
+
+	// Local variables
+	U16 turn, color, opp_color, file, castle_bit;
+	S16 pawn_forward_bitshift;
 
 	// White move
 	if (board->ply % 2){
@@ -840,14 +829,14 @@ U16 isInCheck(Global* global, Board* board, U16 king_bit, U16 do_knights){
 		opp_color = White;
 	}
 
-	// Locate king
+	// Locate king if location not provided
 	if (king_bit == 64)
 		for(king_bit = 0; king_bit < 64; king_bit++)
 			if (U64GetBit(board->piecesBB[King], 0, king_bit))
 				if (U64GetBit(board->piecesBB[color], 0, king_bit))
 					break;
 
-	// Only determine if a move is legal through the knights if the king moves (quiet/capture/castle)
+	// Only determine if a move is legal through the knights if the king moves on your turn or knight on opposing turn
 	if (do_knights){
 
 		U64 knight_checks;
