@@ -1029,11 +1029,11 @@ U64 perft(Global* global, Board* board, U64** results, U16 current_depth, U16 ma
 
 	move_list = legalMoveGenerator(global, board, &length, isInCheck(global, board, 64, YES));
 
+	// Nodes
+	results[current_depth][0] += length;
+
 	// Update results array
 	for(U16 i = 0; i < length; i++){
-
-		// Nodes
-		results[current_depth][0] += 1;
 
 		// Captures
 		if (U16GetBit(move_list[i].move_type, 0, 2))
@@ -1105,9 +1105,10 @@ void initPerft(Global* global, Board* board, U16 max_depth){
 	perft(global, board, results, 0, max_depth);
 
 	// Print output
-	printf("Depth \t Notes \t Captures \t EPs \t Castles \t Promos \t Checks \t Double Checks \t Checkmates\n");
+	printf("%5s %11s %11s %11s %11s %11s %11s %11s %11s\n",
+			"Depth", "Nodes", "Captures", "EPs", "Castles", "Promos", "Checks", "2Checks", "Checkmates");
 	for(U16 i = 0; i < max_depth; i++)
-		printf("%u \t %llu \t %llu \t\t %llu \t %llu \t\t %llu \t\t %llu \t\t %llu \t\t %llu\n",
+		printf("%5u %11llu %11llu %11llu %11llu %11llu %11llu %11llu %11llu\n",
 				i+1, results[i][0], results[i][1], results[i][2], results[i][3], 
 				results[i][4], results[i][5], results[i][6], results[i][7]);
 

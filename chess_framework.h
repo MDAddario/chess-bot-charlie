@@ -272,7 +272,7 @@ void movePrinter(Global*, Board*);
 * - Change functions to functionLikeThis()
 * - Reorder functions in chess_framework files
 *
-* - Remove globalTest()
+* - Tidy up Makefile
 * - Add standardized perft() benchmark
 *
 * - Make sure all declared variables in pseudoMoveGenerator() are used
