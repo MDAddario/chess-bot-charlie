@@ -2,7 +2,7 @@
 #define OFF 0
 
 #define YES 1
-#define NO 	0
+#define NO  0
 
 /*	Bitboard chessboard layout (feat. original chess coords)
  *	
@@ -184,6 +184,9 @@ void BoardReset(Board*);
 // Print board
 void BoardPrint(Board*);
 
+// Setup board based off of FEN string
+void loadFEN(Board*, U16, char**);
+
 // Load capture and quiet BBs
 void GlobalLoadBBs(Global*);
 
@@ -258,6 +261,7 @@ void movePrinter(Global*, Board*);
 *
 * - 3 fold repetition
 * - 50 move draw
+*		- Fix in loadFEN()
 * - insufficientMaterial()
 * - Determine checkmate and stalemate status
 * - FEN reader
