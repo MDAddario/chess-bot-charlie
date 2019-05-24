@@ -152,6 +152,132 @@ void BoardPrint(Board* board){
 	return;
 }
 
+void loadFEN(Board* board, U16 num_fields, char** string){
+
+	// Clear board
+	memset(&(board->piecesBB), OFF, 64);
+
+	// Parse piece layout
+	U16 i = 0;
+	for(S16 rank = 7; rank >= 0; rank--){
+		for(U16 file = 0; file < 8;){
+
+			// Empty spaces
+			if (atoi(string[1] + i)){
+				file += atoi(string[1] + i);
+			}
+
+			// Piece
+			else{
+
+				switch(string[1][i]){
+							
+					case 'P':
+						setPiece(board, White, Pawn, rank, file, ON);
+						break;
+					case 'N':
+						setPiece(board, White, Knight, rank, file, ON);
+						break;
+					case 'B':
+						setPiece(board, White, Bishop, rank, file, ON);
+						break;
+					case 'R':
+						setPiece(board, White, Rook, rank, file, ON);
+						break;
+					case 'Q':
+						setPiece(board, White, Queen, rank, file, ON);
+						break;
+					case 'K':
+						setPiece(board, White, King, rank, file, ON);
+						break;
+
+					case 'p':
+						setPiece(board, Black, Pawn, rank, file, ON);
+						break;
+					case 'n':
+						setPiece(board, Black, Knight, rank, file, ON);
+						break;
+					case 'b':
+						setPiece(board, Black, Bishop, rank, file, ON);
+						break;
+					case 'r':
+						setPiece(board, Black, Rook, rank, file, ON);
+						break;
+					case 'q':
+						setPiece(board, Black, Queen, rank, file, ON);
+						break;
+					case 'k':
+						setPiece(board, Black, King, rank, file, ON);
+						break;
+				}
+				file++;
+			}
+			i++;
+		}
+		i++;
+	}
+
+	// Side to move
+	if (string[2][0] == 'w')
+		board->ply = 1;
+	else
+		board->ply = 2;
+
+	// Castling rights
+	for (U16 i = 0; i < 4; i++)
+		U16SetBit(&(board->castlingRights), 0, i, ON);
+
+	if (string[3][0] != '-'){
+
+		i = 0;
+		while (string[3][i]){
+
+			switch(string[1][i]){
+							
+				case 'K':
+					U16SetBit(&(board->castlingRights), 0, ShortW, ON);
+					break;
+				case 'Q':
+					U16SetBit(&(board->castlingRights), 0, LongW, ON);
+					break;
+				case 'k':
+					U16SetBit(&(board->castlingRights), 0, ShortB, ON);
+					break;
+				case 'q':
+					U16SetBit(&(board->castlingRights), 0, LongB, ON);
+					break;
+			}
+			i++;
+		}
+	}
+
+	// EP rights
+	memset(&(board->EPFiles), OFF, 2);
+
+	if (string[4][0] != '-'){
+
+		i = string[4][0] - 97;
+		U16SetBit(&(board->EPFiles), 0, i, ON);
+	}
+
+	// Halfmove clock
+	if (num_fields >= 6){
+
+		i = string[5][0];
+
+		// I haven't prepared the halfmove clock yet
+	}
+
+	// Fullmove counter
+	if (num_fields >= 7){
+
+		i = 2*(atoi(string[6]) - 1);
+		board->ply += i;
+	}
+
+	return;
+}
+
 void GlobalLoadBBs(Global* global){
 
 	char* filename = (char*)malloc(200*sizeof(char));
