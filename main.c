@@ -13,6 +13,16 @@ int main(int argc, char* argv[]){
 	Board* board = (Board*)malloc(sizeof(Board));
 	BoardReset(board);
 
+	// FEN testing
+	if (argc < 5){
+		printf("Please provide a complete FEN string.\n");
+		return -1;
+	}
+	loadFEN(board, argc, argv);
+	BoardPrint(board);
+	printf("Ply: %d\n", board->ply);
+	return 0;
+
 	// Perft testing
 	if (argc < 2){
 		printf("Please provide depth for perft() function.\n");
