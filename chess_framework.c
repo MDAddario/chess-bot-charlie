@@ -1341,7 +1341,7 @@ void movePrinter(Global* global, Board* board){
 		}
 
 		// Print out all the information
-		printf("%d.: %s %s %s; %s; %s\n", i+1, UCI_string, moved, move_type, promo, captured);
+		printf("%d.: %s %s %s; %s; %s\n", i, UCI_string, moved, move_type, promo, captured);
 	}
 	free(moveList);
 	return;
