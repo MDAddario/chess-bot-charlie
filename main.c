@@ -43,7 +43,7 @@ int main(int argc, char* argv[]){
 	debugBoard(global, board, move, "Nh3");
 	makeMove(global, board, move, NO);
 
-	BoardPrint(board);
+	//BoardPrint(board);
 
 
 	// Capture test
@@ -76,7 +76,7 @@ int main(int argc, char* argv[]){
 	debugBoard(global, board, move, "Nxe4");
 	makeMove(global, board, move, NO);
 
-	BoardPrint(board);
+	//BoardPrint(board);
 
 
 	// Check test
@@ -101,7 +101,7 @@ int main(int argc, char* argv[]){
 	debugBoard(global, board, move, "g6");
 	makeMove(global, board, move, NO);
 
-	BoardPrint(board);
+	//BoardPrint(board);
 
 
 	// Scholars mate test
@@ -138,7 +138,7 @@ int main(int argc, char* argv[]){
 	debugBoard(global, board, move, "Qf7#");
 	makeMove(global, board, move, NO);
 
-	BoardPrint(board);
+	//BoardPrint(board);
 
 
 	// Short castle test
@@ -179,7 +179,7 @@ int main(int argc, char* argv[]){
 	debugBoard(global, board, move, "O-O");
 	makeMove(global, board, move, NO);
 
-	BoardPrint(board);
+	//BoardPrint(board);
 
 
 	// Long castle test
@@ -228,7 +228,7 @@ int main(int argc, char* argv[]){
 	debugBoard(global, board, move, "O-O-O");
 	makeMove(global, board, move, NO);
 
-	BoardPrint(board);
+	//BoardPrint(board);
 
 
 	// En passant test
@@ -257,7 +257,7 @@ int main(int argc, char* argv[]){
 	debugBoard(global, board, move, "exd6e.p.");
 	makeMove(global, board, move, NO);
 
-	BoardPrint(board);
+	//BoardPrint(board);
 
 
 	// Promotion test
@@ -289,16 +289,10 @@ int main(int argc, char* argv[]){
 	configureMove(&move, bitFromAlgeb("d7"), bitFromAlgeb("d6"), Quiet, Pawn, Null_piece);
 	debugBoard(global, board, move, "d6");
 	makeMove(global, board, move, NO);
-
-	BoardPrint(board);
-	printf("\n");
-
+	
 	configureMove(&move, bitFromAlgeb("e6"), bitFromAlgeb("f7"), Capture, Pawn, Pawn);
 	debugBoard(global, board, move, "exf7+");
 	makeMove(global, board, move, NO);
-
-	BoardPrint(board);
-	printf("\n");
 
 	configureMove(&move, bitFromAlgeb("e8"), bitFromAlgeb("d7"), Quiet, King, Null_piece);
 	debugBoard(global, board, move, "Kd7");

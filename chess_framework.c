@@ -697,15 +697,15 @@ U16 validateMove(Global* global, Board* board, Move move){
 		pawn_forward_bitshift = -8;
 	}
 
-	// Update moving piece
-	setPiece(board, color, move.moving_piece, 0, move.bit_from, OFF);
-	setPiece(board, color, move.moving_piece, 0, move.bit_to,    ON);
-
 	// Check for captured piece
 	if (move.move_type == EPCapture)
 		setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, OFF);
 	else if (U16GetBit(move.move_type, 0, 2))
 		setPiece(board, opp_color, move.captured_piece, 0, move.bit_to, OFF);
+
+	// Update moving piece
+	setPiece(board, color, move.moving_piece, 0, move.bit_from, OFF);
+	setPiece(board, color, move.moving_piece, 0, move.bit_to, ON);
 
 	// Validating if move leaves player in check
 	if (move.moving_piece != King){
@@ -782,15 +782,15 @@ U16 makeMove(Global* global, Board* board, Move move, U16 do_validate){
 		pawn_forward_bitshift = -8;
 	}
 
-	// Update moving piece
-	setPiece(board, color, move.moving_piece, 0, move.bit_from, OFF);
-	setPiece(board, color, move.moving_piece, 0, move.bit_to, ON);
-
 	// Check for captured piece
 	if (move.move_type == EPCapture)
 		setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, OFF);
 	else if (U16GetBit(move.move_type, 0, 2))
 		setPiece(board, opp_color, move.captured_piece, 0, move.bit_to, OFF);
+
+	// Update moving piece
+	setPiece(board, color, move.moving_piece, 0, move.bit_from, OFF);
+	setPiece(board, color, move.moving_piece, 0, move.bit_to, ON);
 
 	// Update castling flags
 	if (move.bit_from == 4){
