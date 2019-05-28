@@ -293,8 +293,12 @@ void movePrinter(Global*, Board*);
 * - Compress moveToUCI by using the ascii values of a-h and 1-8
 *
 * - Consider compressing memory in Board and Move structs
+* - Implement U8 and S8 data types
 *
 * - Potentially keep track of king bits
+* - Consider setting Global* and Board* as global variables
+* - Consider copyMake() approach
+* - Make sure all used data types are appropriate
 *
 ****************************************/
 
