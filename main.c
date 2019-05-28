@@ -60,16 +60,12 @@ int main(int argc, char* argv[]){
 	return 0;
 	*/
 
-	/*
 	// FEN loading
-	if (argc < 5){
+	if (argc < 6){
 		printf("Please provide a complete FEN string.\n");
 		return -1;
 	}
 	loadFEN(board, argc, argv);
-	BoardPrint(board);
-	return 0;
-	*/
 
 	// Perft testing
 	if (argc < 2){
@@ -78,4 +74,8 @@ int main(int argc, char* argv[]){
 	}
 	initPerft(global, board, atoi(argv[1]));
 	return 0;
+
+	/*
+	./main 3 8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -
+	*/
 }

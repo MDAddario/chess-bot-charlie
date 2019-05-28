@@ -163,14 +163,14 @@ void loadFEN(Board* board, U16 num_fields, char** string){
 		for(U16 file = 0; file < 8;){
 
 			// Empty spaces
-			if (atoi(string[1] + i)){
-				file += atoi(string[1] + i);
+			if (atoi(string[2] + i)){
+				file += atoi(string[2] + i);
 			}
 
 			// Piece
 			else{
 
-				switch(string[1][i]){
+				switch(string[2][i]){
 							
 					case 'P':
 						setPiece(board, White, Pawn, rank, file, ON);
@@ -218,21 +218,21 @@ void loadFEN(Board* board, U16 num_fields, char** string){
 	}
 
 	// Side to move
-	if (string[2][0] == 'w')
+	if (string[3][0] == 'w')
 		board->ply = 1;
 	else
 		board->ply = 2;
 
 	// Castling rights
 	for (U16 i = 0; i < 4; i++)
-		U16SetBit(&(board->castlingRights), 0, i, ON);
+		U16SetBit(&(board->castlingRights), 0, i, OFF);
 
-	if (string[3][0] != '-'){
+	if (string[4][0] != '-'){
 
 		i = 0;
-		while (string[3][i]){
+		while (string[4][i]){
 
-			switch(string[1][i]){
+			switch(string[4][i]){
 							
 				case 'K':
 					U16SetBit(&(board->castlingRights), 0, ShortW, ON);
@@ -254,24 +254,24 @@ void loadFEN(Board* board, U16 num_fields, char** string){
 	// EP rights
 	memset(&(board->EPFiles), OFF, 2);
 
-	if (string[4][0] != '-'){
+	if (string[5][0] != '-'){
 
-		i = string[4][0] - 97;
+		i = string[5][0] - 97;
 		U16SetBit(&(board->EPFiles), 0, i, ON);
 	}
 
 	// Halfmove clock
-	if (num_fields >= 6){
+	if (num_fields >= 7){
 
-		i = string[5][0];
+		i = atoi(string[6]);
 
 		// I haven't prepared the halfmove clock yet
 	}
 
 	// Fullmove counter
-	if (num_fields >= 7){
+	if (num_fields >= 8){
 
-		i = 2*(atoi(string[6]) - 1);
+		i = 2*(atoi(string[7]) - 1);
 		board->ply += i;
 	}
 
