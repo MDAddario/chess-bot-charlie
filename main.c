@@ -290,9 +290,15 @@ int main(int argc, char* argv[]){
 	debugBoard(global, board, move, "d6");
 	makeMove(global, board, move, NO);
 
+	BoardPrint(board);
+	printf("\n");
+
 	configureMove(&move, bitFromAlgeb("e6"), bitFromAlgeb("f7"), Capture, Pawn, Pawn);
 	debugBoard(global, board, move, "exf7+");
 	makeMove(global, board, move, NO);
+
+	BoardPrint(board);
+	printf("\n");
 
 	configureMove(&move, bitFromAlgeb("e8"), bitFromAlgeb("d7"), Quiet, King, Null_piece);
 	debugBoard(global, board, move, "Kd7");
