@@ -1121,43 +1121,37 @@ void initPerft(Global* global, Board* board, U16 max_depth){
 	return;
 }
 
-void compareBoards(Board* board_1, Board* board_2){
-
-	U16 is_identical = 1;
+void compareBoards(Board* board_1, Board* board_2, char* move_name, char* func_name){
 
 	// Compare bitboards
 	for(U16 i = Pawn; i <= Black; i++)
 		if (board_1->piecesBB[i] != board_2->piecesBB[i]){
 
-			printf("Difference in bitboard %hu.\n", i);
-			is_identical = 0;
+			printf("%s error for %s:\n", func_name, move_name);
+			printf("\t-> Difference in bitboard %hu.\n", i);
 		}
 
 	// Compare remaining fields
 	if (board_1->castlingRights != board_2->castlingRights){
 
-		printf("Difference in castling rights.\n");
-		is_identical = 0;
+		printf("%s error for %s:\n", func_name, move_name);
+		printf("\t-> Difference in castling rights.\n");
 	}
 	if (board_1->EPFiles != board_2->EPFiles){
 
-		printf("Difference in EP files.\n");
-		is_identical = 0;
+		printf("%s error for %s:\n", func_name, move_name);
+		printf("\t-> Difference in EP files.\n");
 	}
 	if (board_1->ply != board_2->ply){
 
-		printf("Difference in ply.\n");
-		is_identical = 0;
+		printf("%s error for %s:\n", func_name, move_name);
+		printf("\t-> Difference in ply.\n");
 	}
-
-	if (is_identical)
-		printf("Boards are identical.\n");
-	printf("\n");
 
 	return;
 }
 
-void debugBoard(Global* global, Board* board, Move move){
+void debugBoard(Global* global, Board* board, Move move, char* move_name){
 
 	// Make copy of board
 	Board* original_board = (Board*)malloc(sizeof(Board));
@@ -1165,30 +1159,33 @@ void debugBoard(Global* global, Board* board, Move move){
 
 	// isInCheck()
 	U16 num_checks = isInCheck(global, board, 64, YES);
-	printf("isInCheck()\n");
-	compareBoards(board, original_board);
+	compareBoards(board, original_board, move_name, "isInCheck()");
 
 	// validateMove()
 	validateMove(global, board, move);
-	printf("validateMove()\n");
-	compareBoards(board, original_board);
+	compareBoards(board, original_board, move_name, "validateMove()");
 
 	// legalMoveGenerator()
 	U16 length;
 	legalMoveGenerator(global, board, &length, num_checks);
-	printf("legalMoveGenerator()\n");
-	compareBoards(board, original_board);
+	compareBoards(board, original_board, move_name, "legalMoveGenerator()");
 
 	// makeMove() && undoMove()
 	U16 castling_rights = board->castlingRights;
 	U16 EP_files = board->EPFiles;
 	makeMove(global, board, move, NO);
-	printf("makeMove()\n");
 	undoMove(global, board, move, castling_rights, EP_files);
-	printf("undoMove()\n");
-	compareBoards(board, original_board);
+	compareBoards(board, original_board, move_name, "makeMove() && undoMove()");
 
 	return;
+}
+
+U16 bitFromAlgeb(char* algebraic){
+
+	U16 file = algebraic[0] - 97;
+	U16 rank = algebraic[1] - 1;
+
+	return 8*rank + file;
 }
 
 char* moveToUCI(Move move){
