@@ -1021,7 +1021,7 @@ U16 isInCheck(Global* global, Board* board, U16 king_bit, U16 do_knights){
 	return checks;
 }
 
-U64 perft(Global* global, Board* board, U64** results, U16 current_depth, U16 max_depth){
+void perft(Global* global, Board* board, U64** results, U16 current_depth, U16 max_depth){
 
 	/*
 	https://www.chessprogramming.org/Perft_Results
@@ -1029,13 +1029,24 @@ U64 perft(Global* global, Board* board, U64** results, U16 current_depth, U16 ma
 
 	Move* move_list;
 	U16 length, castling_rights, EP_files, num_checks;
-	U64 total_nodes = 0;
 
-	move_list = legalMoveGenerator(global, board, &length, isInCheck(global, board, 64, YES));
+	// Checks
+	num_checks = isInCheck(global, board, 64, YES);
+	if (num_checks)
+		results[current_depth-1][5] += 1;
 
-	// Base case
-	if (current_depth == max_depth)
-		return 1;
+	// Double checks
+	if (num_checks == 2)
+		results[current_depth-1][6] += 1;
+
+	// Checkmates
+	move_list = legalMoveGenerator(global, board, &length, num_checks);
+	if (length == 0)
+		results[current_depth-1][7] += 1;
+
+	/*
+	CURRENTLY NO DISCREPANCY BETWEEN CHECKMATES AND STALEMATES
+	*/
 
 	// Nodes
 	results[current_depth][0] += length;
@@ -1060,41 +1071,25 @@ U64 perft(Global* global, Board* board, U64** results, U16 current_depth, U16 ma
 			results[current_depth][4] += 1;
 	}
 
+	// Base case
+	if (current_depth == max_depth-1){
+		free(move_list);
+		return;
+	}
+
+	// Not a leaf node
 	castling_rights = board->castlingRights;
 	EP_files 		= board->EPFiles;
 
 	for(U16 i = 0; i < length; i++){
 
 		makeMove(global, board, move_list[i], NO);
-		total_nodes += perft(global, board, results, current_depth + 1, max_depth);
-
-		// Checks
-		num_checks = isInCheck(global, board, 64, YES);
-		if (num_checks)
-			results[current_depth][5] += 1;
-
-		// Double checks
-		if (num_checks == 2)
-			results[current_depth][6] += 1;
-
-		// Checkmates
-		U16 next_length;
-		Move* next_move_list;
-		next_move_list = legalMoveGenerator(global, board, &next_length, num_checks);
-
-		if (next_length == 0)
-			results[current_depth][7] += 1;
-		free(next_move_list);
-
-		/*
-		CURRENTLY NO DISCREPANCY BETWEEN CHECKMATES AND STALEMATES
-		*/
-
+		perft(global, board, results, current_depth + 1, max_depth);
 		undoMove(global, board, move_list[i], castling_rights, EP_files);
-
 	}
+
 	free(move_list);
-	return total_nodes;
+	return;
 }
 
 void initPerft(Global* global, Board* board, U16 max_depth){
@@ -1121,9 +1116,16 @@ void initPerft(Global* global, Board* board, U16 max_depth){
 	printf("%5s %11s %11s %11s %11s %11s %11s %11s %11s\n",
 			"Depth", "Nodes", "Captures", "EPs", "Castles", "Promos", "Checks", "2Checks", "Checkmates");
 	for(U16 i = 0; i < max_depth; i++)
-		printf("%5u %11llu %11llu %11llu %11llu %11llu %11llu %11llu %11llu\n",
-				i+1, results[i][0], results[i][1], results[i][2], results[i][3], 
-				results[i][4], results[i][5], results[i][6], results[i][7]);
+
+		if (i == max_depth-1)
+			printf("%5u %11llu %11llu %11llu %11llu %11llu %11s %11s %11s\n",
+					i+1, results[i][0], results[i][1], results[i][2], results[i][3], 
+					results[i][4], "---", "---", "---");
+
+		else
+			printf("%5u %11llu %11llu %11llu %11llu %11llu %11llu %11llu %11llu\n",
+					i+1, results[i][0], results[i][1], results[i][2], results[i][3], 
+					results[i][4], results[i][5], results[i][6], results[i][7]);
 
 	// Free memory
 	for(U16 i = 0; i < max_depth; i++)
