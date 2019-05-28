@@ -253,11 +253,14 @@ void compareBoards(Board*, Board*, char*, char*);
 // Debug current board for many functions
 void debugBoard(Global*, Board*, Move, char*);
 
+// Convert algebraic coordinates to bit
+U16 bitFromAlgeb(char*);
+
 // Test that bits correspond to proper move types
 void bitTesting();
 
-// Convert algebraic coordinates to bit
-U16 bitFromAlgeb(char*);
+// Unit tests (not 100% coverage)
+void unitTests(Global*, Board*);
 
 // Convert move to UCI string
 char* moveToUCI(Move);
@@ -277,6 +280,7 @@ void movePrinter(Global*, Board*);
 * - Determine checkmate and stalemate status
 * - FEN reader
 * - Algebraic reader
+* - Use FEN for BoardReset()
 *
 * - Make sure I free() where I malloc() or calloc()
 *		- Particularly for moveGenerators()
@@ -299,6 +303,8 @@ void movePrinter(Global*, Board*);
 * - Consider setting Global* and Board* as global variables
 * - Consider copyMake() approach
 * - Make sure all used data types are appropriate
+*
+* - Add .bmp output
 *
 ****************************************/
 
