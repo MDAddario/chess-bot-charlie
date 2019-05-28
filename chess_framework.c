@@ -1028,10 +1028,14 @@ U64 perft(Global* global, Board* board, U64** results, U16 current_depth, U16 ma
 	*/
 
 	Move* move_list;
-	U16 length, castling_rights, EP_files;
+	U16 length, castling_rights, EP_files, num_checks;
 	U64 total_nodes = 0;
 
 	move_list = legalMoveGenerator(global, board, &length, isInCheck(global, board, 64, YES));
+
+	// Base case
+	if (current_depth == max_depth)
+		return 1;
 
 	// Nodes
 	results[current_depth][0] += length;
@@ -1052,36 +1056,40 @@ U64 perft(Global* global, Board* board, U64** results, U16 current_depth, U16 ma
 			results[current_depth][3] += 1;
 
 		// Promotions
-		if (move_list[i].move_type >= RPromo && move_list[i].move_type <= QPromoCapture)
+		if (U16GetBit(move_list[i].move_type, 0, 3))
 			results[current_depth][4] += 1;
+	}
+
+	castling_rights = board->castlingRights;
+	EP_files 		= board->EPFiles;
+
+	for(U16 i = 0; i < length; i++){
+
+		makeMove(global, board, move_list[i], NO);
+		total_nodes += perft(global, board, results, current_depth + 1, max_depth);
 
 		// Checks
-		(board->ply)++;
-		U16 num_checks = isInCheck(global, board, 64, YES);
+		num_checks = isInCheck(global, board, 64, YES);
 		if (num_checks)
 			results[current_depth][5] += 1;
-		(board->ply)--;
 
 		// Double checks
 		if (num_checks == 2)
 			results[current_depth][6] += 1;
 
 		// Checkmates
+		U16 next_length;
+		Move* next_move_list;
+		next_move_list = legalMoveGenerator(global, board, &next_length, num_checks);
 
-	}
+		if (next_length == 0)
+			results[current_depth][7] += 1;
+		free(next_move_list);
 
-	// Base case
-	if (current_depth == max_depth-1)
-		return length;
+		/*
+		CURRENTLY NO DISCREPANCY BETWEEN CHECKMATES AND STALEMATES
+		*/
 
-	// Not leaf node
-	castling_rights = board->castlingRights;
-	EP_files = board->EPFiles;
-
-	for(U16 i = 0; i < length; i++){
-
-		makeMove(global, board, move_list[i], NO);
-		total_nodes += perft(global, board, results, current_depth + 1, max_depth);
 		undoMove(global, board, move_list[i], castling_rights, EP_files);
 
 	}

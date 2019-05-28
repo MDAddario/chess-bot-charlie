@@ -14,30 +14,13 @@ int main(int argc, char* argv[]){
 	Board* board = (Board*)malloc(sizeof(Board));
 	BoardReset(board);
 
+	/*
 	// Debug chess functions
 	unitTests(global, board);
-
 	return 0;
-
-
-
-
-
-
-	/*
-	Obvious move generation bug when playing the following sequence:
-	12 -> 0 -> 29 -> 5 ->
-	There are two ways to capture the d6 pawn?
-	Move 29, 30 breaks the game
-	-------------------------------------------
-	Clearly, there is an issue with EP, in at least one of
-
-		- psuedoMoveGenerator()
-		- validateMove()
-		- makeMove()
-		- undoMove()
 	*/
 
+	/*
 	// Interactive chess playing
 	char input, buffer;
 	Move* move_list;
@@ -75,10 +58,9 @@ int main(int argc, char* argv[]){
 			printf("Please input 'm' or 'u' for make or undo.\n");
 	}
 	return 0;
+	*/
 
-
-
-
+	/*
 	// FEN loading
 	if (argc < 5){
 		printf("Please provide a complete FEN string.\n");
@@ -87,9 +69,7 @@ int main(int argc, char* argv[]){
 	loadFEN(board, argc, argv);
 	BoardPrint(board);
 	return 0;
-
-
-
+	*/
 
 	// Perft testing
 	if (argc < 2){
