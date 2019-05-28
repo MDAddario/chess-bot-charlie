@@ -247,6 +247,21 @@ U64 perft(Global*, Board*, U64**, U16, U16);
 // Initial call for perft() function
 void initPerft(Global*, Board*, U16);
 
+// Debugging tool to compare boards
+void compareBoards(Board*, Board*, char*, char*);
+
+// Debug current board for many functions
+void debugBoard(Global*, Board*, Move, char*);
+
+// Convert algebraic coordinates to bit
+U16 bitFromAlgeb(char*);
+
+// Test that bits correspond to proper move types
+void bitTesting();
+
+// Unit tests (not 100% coverage)
+void unitTests(Global*, Board*);
+
 // Convert move to UCI string
 char* moveToUCI(Move);
 
@@ -257,7 +272,6 @@ void movePrinter(Global*, Board*);
 * TO DO LIST:
 *
 * - Make perft() work
-* 		- Track EP and caslting flags
 *
 * - 3 fold repetition
 * - 50 move draw
@@ -266,8 +280,10 @@ void movePrinter(Global*, Board*);
 * - Determine checkmate and stalemate status
 * - FEN reader
 * - Algebraic reader
+* - Use FEN for BoardReset()
 *
 * - Make sure I free() where I malloc() or calloc()
+*		- Particularly for moveGenerators()
 * - Change variables to use_this_type
 * - Change functions to functionLikeThis()
 * - Reorder functions in chess_framework files
@@ -281,6 +297,14 @@ void movePrinter(Global*, Board*);
 * - Compress moveToUCI by using the ascii values of a-h and 1-8
 *
 * - Consider compressing memory in Board and Move structs
+* - Implement U8 and S8 data types
+*
+* - Potentially keep track of king bits
+* - Consider setting Global* and Board* as global variables
+* - Consider copyMake() approach
+* - Make sure all used data types are appropriate
+*
+* - Add .bmp output
 *
 ****************************************/
 

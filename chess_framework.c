@@ -680,27 +680,32 @@ U16 validateMove(Global* global, Board* board, Move move){
 	// Local variables
 	U16 color, opp_color, castle_bit;
 	U16 isLegal = 1;
+	S16 pawn_forward_bitshift;
 
 	// White move
 	if (board->ply % 2){
 		color = White;
 		opp_color = Black;
 		castle_bit = 4;
+		pawn_forward_bitshift = 8;
 	}
 	// Black move
 	else{
 		color = Black;
 		opp_color = White;
 		castle_bit = 60;
+		pawn_forward_bitshift = -8;
 	}
+
+	// Check for captured piece
+	if (move.move_type == EPCapture)
+		setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, OFF);
+	else if (U16GetBit(move.move_type, 0, 2))
+		setPiece(board, opp_color, move.captured_piece, 0, move.bit_to, OFF);
 
 	// Update moving piece
 	setPiece(board, color, move.moving_piece, 0, move.bit_from, OFF);
-	setPiece(board, color, move.moving_piece, 0, move.bit_to,    ON);
-
-	// Check for captured piece
-	if (U16GetBit(move.move_type, 0, 2))
-		setPiece(board, opp_color, move.captured_piece, 0, move.bit_to, OFF);
+	setPiece(board, color, move.moving_piece, 0, move.bit_to, ON);
 
 	// Validating if move leaves player in check
 	if (move.moving_piece != King){
@@ -740,7 +745,10 @@ U16 validateMove(Global* global, Board* board, Move move){
 	setPiece(board, color, move.moving_piece, 0, move.bit_from, ON);
 	setPiece(board, color, move.moving_piece, 0, move.bit_to,  OFF);
 
-	if (U16GetBit(move.move_type, 0, 2))
+	// Check for captured piece
+	if (move.move_type == EPCapture)
+		setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, ON);
+	else if (U16GetBit(move.move_type, 0, 2))
 		setPiece(board, opp_color, move.captured_piece, 0, move.bit_to, ON);
 
 	return isLegal;
@@ -774,13 +782,15 @@ U16 makeMove(Global* global, Board* board, Move move, U16 do_validate){
 		pawn_forward_bitshift = -8;
 	}
 
+	// Check for captured piece
+	if (move.move_type == EPCapture)
+		setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, OFF);
+	else if (U16GetBit(move.move_type, 0, 2))
+		setPiece(board, opp_color, move.captured_piece, 0, move.bit_to, OFF);
+
 	// Update moving piece
 	setPiece(board, color, move.moving_piece, 0, move.bit_from, OFF);
 	setPiece(board, color, move.moving_piece, 0, move.bit_to, ON);
-
-	// Check for captured piece
-	if (U16GetBit(move.move_type, 0, 2))
-		setPiece(board, opp_color, move.captured_piece, 0, move.bit_to, OFF);
 
 	// Update castling flags
 	if (move.bit_from == 4){
@@ -845,10 +855,6 @@ U16 makeMove(Global* global, Board* board, Move move, U16 do_validate){
 			setPiece(board, color, Rook, 0, move.bit_from - 4, OFF);
 			setPiece(board, color, Rook, 0, move.bit_from - 1, ON);
 			break;
-
-		case EPCapture:
-			setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, OFF);
-			break;
 	}
 
 	(board->ply)++;
@@ -882,7 +888,9 @@ void undoMove(Global* global, Board* board, Move move, U16 castlingRights, U16 E
 	setPiece(board, color, move.moving_piece, 0, move.bit_to, OFF);
 
 	// Check for captured piece
-	if (U16GetBit(move.move_type, 0, 2))
+	if (move.move_type == EPCapture)
+		setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, ON);
+	else if (U16GetBit(move.move_type, 0, 2))
 		setPiece(board, opp_color, move.captured_piece, 0, move.bit_to, ON);
 
 	// Check for promotion
@@ -916,10 +924,6 @@ void undoMove(Global* global, Board* board, Move move, U16 castlingRights, U16 E
 		case LongCastle:
 			setPiece(board, color, Rook, 0, move.bit_from - 4, ON);
 			setPiece(board, color, Rook, 0, move.bit_from - 1, OFF);
-			break;
-
-		case EPCapture:
-			setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, ON);
 			break;
 	}
 
@@ -1024,10 +1028,14 @@ U64 perft(Global* global, Board* board, U64** results, U16 current_depth, U16 ma
 	*/
 
 	Move* move_list;
-	U16 length, castling_rights, EP_files;
+	U16 length, castling_rights, EP_files, num_checks;
 	U64 total_nodes = 0;
 
 	move_list = legalMoveGenerator(global, board, &length, isInCheck(global, board, 64, YES));
+
+	// Base case
+	if (current_depth == max_depth)
+		return 1;
 
 	// Nodes
 	results[current_depth][0] += length;
@@ -1048,39 +1056,44 @@ U64 perft(Global* global, Board* board, U64** results, U16 current_depth, U16 ma
 			results[current_depth][3] += 1;
 
 		// Promotions
-		if (move_list[i].move_type >= RPromo && move_list[i].move_type <= QPromoCapture)
+		if (U16GetBit(move_list[i].move_type, 0, 3))
 			results[current_depth][4] += 1;
+	}
+
+	castling_rights = board->castlingRights;
+	EP_files 		= board->EPFiles;
+
+	for(U16 i = 0; i < length; i++){
+
+		makeMove(global, board, move_list[i], NO);
+		total_nodes += perft(global, board, results, current_depth + 1, max_depth);
 
 		// Checks
-		(board->ply)++;
-		U16 num_checks = isInCheck(global, board, 64, YES);
+		num_checks = isInCheck(global, board, 64, YES);
 		if (num_checks)
 			results[current_depth][5] += 1;
-		(board->ply)--;
 
 		// Double checks
 		if (num_checks == 2)
 			results[current_depth][6] += 1;
 
 		// Checkmates
+		U16 next_length;
+		Move* next_move_list;
+		next_move_list = legalMoveGenerator(global, board, &next_length, num_checks);
 
-	}
+		if (next_length == 0)
+			results[current_depth][7] += 1;
+		free(next_move_list);
 
-	// Base case
-	if (current_depth == max_depth-1)
-		return length;
+		/*
+		CURRENTLY NO DISCREPANCY BETWEEN CHECKMATES AND STALEMATES
+		*/
 
-	// Not leaf node
-	castling_rights = board->castlingRights;
-	EP_files = board->EPFiles;
-
-	for(U16 i = 0; i < length; i++){
-
-		makeMove(global, board, move_list[i], NO);
-		total_nodes += perft(global, board, results, current_depth + 1, max_depth);
 		undoMove(global, board, move_list[i], castling_rights, EP_files);
 
 	}
+	free(move_list);
 	return total_nodes;
 }
 
@@ -1117,6 +1130,390 @@ void initPerft(Global* global, Board* board, U16 max_depth){
 		free(results[i]);
 	free(results);
 
+	return;
+}
+
+void compareBoards(Board* board_1, Board* board_2, char* move_name, char* func_name){
+
+	// Compare bitboards
+	for(U16 i = Pawn; i <= Black; i++)
+		if (board_1->piecesBB[i] != board_2->piecesBB[i]){
+
+			printf("%s error for %s:\n", func_name, move_name);
+			printf("\t-> Difference in bitboard %hu.\n", i);
+		}
+
+	// Compare remaining fields
+	if (board_1->castlingRights != board_2->castlingRights){
+
+		printf("%s error for %s:\n", func_name, move_name);
+		printf("\t-> Difference in castling rights.\n");
+	}
+	if (board_1->EPFiles != board_2->EPFiles){
+
+		printf("%s error for %s:\n", func_name, move_name);
+		printf("\t-> Difference in EP files.\n");
+	}
+	if (board_1->ply != board_2->ply){
+
+		printf("%s error for %s:\n", func_name, move_name);
+		printf("\t-> Difference in ply.\n");
+	}
+
+	return;
+}
+
+void debugBoard(Global* global, Board* board, Move move, char* move_name){
+
+	// Make copy of board
+	Board* original_board = (Board*)malloc(sizeof(Board));
+	memcpy(original_board, board, sizeof(Board));
+
+	// isInCheck()
+	U16 num_checks = isInCheck(global, board, 64, YES);
+	compareBoards(board, original_board, move_name, "isInCheck()");
+
+	// validateMove()
+	validateMove(global, board, move);
+	compareBoards(board, original_board, move_name, "validateMove()");
+
+	// legalMoveGenerator()
+	U16 length;
+	legalMoveGenerator(global, board, &length, num_checks);
+	compareBoards(board, original_board, move_name, "legalMoveGenerator()");
+
+	// makeMove() && undoMove()
+	U16 castling_rights = board->castlingRights;
+	U16 EP_files = board->EPFiles;
+	makeMove(global, board, move, NO);
+	undoMove(global, board, move, castling_rights, EP_files);
+	compareBoards(board, original_board, move_name, "makeMove() && undoMove()");
+
+	return;
+}
+
+U16 bitFromAlgeb(char* algebraic){
+
+	U16 file = algebraic[0] - 97;
+	U16 rank = algebraic[1] - 1;
+
+	return 8*rank + file;
+}
+
+void bitTesting(){
+
+	Move move;
+	for(move.move_type = 0; move.move_type <= 15; move.move_type++){
+
+		printf("move_type = %hu", move.move_type);
+
+		if (U16GetBit(move.move_type, 0, 3))
+			printf("\t\tPromotion == Ye");
+		else
+			printf("\t\tPromotion == No");
+
+		if (U16GetBit(move.move_type, 0, 2))
+			printf("\t\tCapture == Ye\n");
+		else
+			printf("\t\tCapture == No\n");
+
+	}
+	return ;
+}
+
+void unitTests(Global* global, Board* board){
+
+	// Debug chess functions
+	Move move;
+
+	// Quiet test
+	printf("==========================\n");
+	printf("QUIET TEST\n");
+	printf("==========================\n");
+	BoardReset(board);
+
+	configureMove(&move, bitFromAlgeb("e2"), bitFromAlgeb("e4"), DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move, "e4");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("e7"), bitFromAlgeb("e5"), DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move, "e5");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("b1"), bitFromAlgeb("c3"), Quiet, Knight, Null_piece);
+	debugBoard(global, board, move, "Nc3");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("b8"), bitFromAlgeb("c6"), Quiet, Knight, Null_piece);
+	debugBoard(global, board, move, "Nc6");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("g1"), bitFromAlgeb("h3"), Quiet, Knight, Null_piece);
+	debugBoard(global, board, move, "Nh3");
+	makeMove(global, board, move, NO);
+
+	//BoardPrint(board);
+
+
+	// Capture test
+	printf("==========================\n");
+	printf("CAPTURE TEST\n");
+	printf("==========================\n");
+	BoardReset(board);
+
+	configureMove(&move, bitFromAlgeb("e2"), bitFromAlgeb("e4"), DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move, "e4");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("e7"), bitFromAlgeb("e5"), DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move, "e5");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("g1"), bitFromAlgeb("f3"), Quiet, Knight, Null_piece);
+	debugBoard(global, board, move, "Nf3");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("g8"), bitFromAlgeb("f6"), Quiet, Knight, Null_piece);
+	debugBoard(global, board, move, "Nf6");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("f3"), bitFromAlgeb("e5"), Capture, Knight, Pawn);
+	debugBoard(global, board, move, "Nxe5");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("f6"), bitFromAlgeb("e4"), Capture, Knight, Pawn);
+	debugBoard(global, board, move, "Nxe4");
+	makeMove(global, board, move, NO);
+
+	//BoardPrint(board);
+
+
+	// Check test
+	printf("==========================\n");
+	printf("CHECK TEST\n");
+	printf("==========================\n");
+	BoardReset(board);
+
+	configureMove(&move, bitFromAlgeb("e2"), bitFromAlgeb("e4"), DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move, "e4");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("f7"), bitFromAlgeb("f5"), DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move, "f5");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("d1"), bitFromAlgeb("h5"), Quiet, Queen, Null_piece);
+	debugBoard(global, board, move, "Qh5+");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("g7"), bitFromAlgeb("g6"), Quiet, Pawn, Null_piece);
+	debugBoard(global, board, move, "g6");
+	makeMove(global, board, move, NO);
+
+	//BoardPrint(board);
+
+
+	// Scholars mate test
+	printf("==========================\n");
+	printf("SCHOLARS MATE TEST\n");
+	printf("==========================\n");
+	BoardReset(board);
+
+	configureMove(&move, bitFromAlgeb("e2"), bitFromAlgeb("e4"), DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move, "e4");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("a7"), bitFromAlgeb("a5"), DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move, "a5");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("f1"), bitFromAlgeb("c4"), Quiet, Bishop, Null_piece);
+	debugBoard(global, board, move, "Bc4");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("b7"), bitFromAlgeb("b6"), Quiet, Pawn, Null_piece);
+	debugBoard(global, board, move, "b6");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("d1"), bitFromAlgeb("f3"), Quiet, Queen, Null_piece);
+	debugBoard(global, board, move, "Qf3");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("h7"), bitFromAlgeb("h6"), Quiet, Pawn, Null_piece);
+	debugBoard(global, board, move, "h6");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("f3"), bitFromAlgeb("f7"), Capture, Queen, Pawn);
+	debugBoard(global, board, move, "Qf7#");
+	makeMove(global, board, move, NO);
+
+	//BoardPrint(board);
+
+
+	// Short castle test
+	printf("==========================\n");
+	printf("SHORT CASTLE TEST\n");
+	printf("==========================\n");
+	BoardReset(board);
+
+	configureMove(&move, bitFromAlgeb("e2"), bitFromAlgeb("e4"), DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move, "e4");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("e7"), bitFromAlgeb("e5"), DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move, "e5");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("g1"), bitFromAlgeb("f3"), Quiet, Knight, Null_piece);
+	debugBoard(global, board, move, "Nf3");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("g8"), bitFromAlgeb("f6"), Quiet, Knight, Null_piece);
+	debugBoard(global, board, move, "Nf6");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("f1"), bitFromAlgeb("b5"), Quiet, Bishop, Null_piece);
+	debugBoard(global, board, move, "Bb5");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("f8"), bitFromAlgeb("b4"), Quiet, Bishop, Null_piece);
+	debugBoard(global, board, move, "Bb4");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("e1"), bitFromAlgeb("g1"), ShortCastle, King, Null_piece);
+	debugBoard(global, board, move, "O-O");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("e8"), bitFromAlgeb("g8"), ShortCastle, King, Null_piece);
+	debugBoard(global, board, move, "O-O");
+	makeMove(global, board, move, NO);
+
+	//BoardPrint(board);
+
+
+	// Long castle test
+	printf("==========================\n");
+	printf("LONG CASTLE TEST\n");
+	printf("==========================\n");
+	BoardReset(board);
+
+	configureMove(&move, bitFromAlgeb("d2"), bitFromAlgeb("d4"), DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move, "d4");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("d7"), bitFromAlgeb("d5"), DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move, "d5");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("b1"), bitFromAlgeb("a3"), Quiet, Knight, Null_piece);
+	debugBoard(global, board, move, "Na3");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("b8"), bitFromAlgeb("a6"), Quiet, Knight, Null_piece);
+	debugBoard(global, board, move, "Na6");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("c1"), bitFromAlgeb("g5"), Quiet, Bishop, Null_piece);
+	debugBoard(global, board, move, "Bg5");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("c8"), bitFromAlgeb("g4"), Quiet, Bishop, Null_piece);
+	debugBoard(global, board, move, "Bg4");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("d1"), bitFromAlgeb("d2"), Quiet, Queen, Null_piece);
+	debugBoard(global, board, move, "Qd2");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("d8"), bitFromAlgeb("d7"), Quiet, Queen, Null_piece);
+	debugBoard(global, board, move, "Qd7");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("e1"), bitFromAlgeb("c1"), LongCastle, King, Null_piece);
+	debugBoard(global, board, move, "O-O-O");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("e8"), bitFromAlgeb("c8"), LongCastle, King, Null_piece);
+	debugBoard(global, board, move, "O-O-O");
+	makeMove(global, board, move, NO);
+
+	//BoardPrint(board);
+
+
+	// En passant test
+	printf("==========================\n");
+	printf("EN PASSANT TEST\n");
+	printf("==========================\n");
+	BoardReset(board);
+
+	configureMove(&move, bitFromAlgeb("e2"), bitFromAlgeb("e4"), DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move, "e4");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("a7"), bitFromAlgeb("a5"), Quiet, Pawn, Null_piece);
+	debugBoard(global, board, move, "a5");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("e4"), bitFromAlgeb("e5"), Quiet, Pawn, Null_piece);
+	debugBoard(global, board, move, "e5");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("d7"), bitFromAlgeb("d5"), DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move, "d5");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("e5"), bitFromAlgeb("d6"), EPCapture, Pawn, Pawn);
+	debugBoard(global, board, move, "exd6e.p.");
+	makeMove(global, board, move, NO);
+
+	//BoardPrint(board);
+
+
+	// Promotion test
+	printf("==========================\n");
+	printf("PROMOTION TEST\n");
+	printf("==========================\n");
+	BoardReset(board);
+
+	configureMove(&move, bitFromAlgeb("e2"), bitFromAlgeb("e4"), DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move, "e4");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("a7"), bitFromAlgeb("a5"), DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move, "a5");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("e4"), bitFromAlgeb("e5"), Quiet, Pawn, Null_piece);
+	debugBoard(global, board, move, "e5");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("b7"), bitFromAlgeb("b5"), DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move, "b5");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("e5"), bitFromAlgeb("e6"), Quiet, Pawn, Null_piece);
+	debugBoard(global, board, move, "e6");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("d7"), bitFromAlgeb("d6"), Quiet, Pawn, Null_piece);
+	debugBoard(global, board, move, "d6");
+	makeMove(global, board, move, NO);
+	
+	configureMove(&move, bitFromAlgeb("e6"), bitFromAlgeb("f7"), Capture, Pawn, Pawn);
+	debugBoard(global, board, move, "exf7+");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("e8"), bitFromAlgeb("d7"), Quiet, King, Null_piece);
+	debugBoard(global, board, move, "Kd7");
+	makeMove(global, board, move, NO);
+
+	configureMove(&move, bitFromAlgeb("f7"), bitFromAlgeb("g8"), QPromoCapture, Pawn, Knight);
+	debugBoard(global, board, move, "fxg8N");
+	makeMove(global, board, move, NO);
+
+	//BoardPrint(board);
+
+	BoardReset(board);
 	return;
 }
 
@@ -1341,7 +1738,7 @@ void movePrinter(Global* global, Board* board){
 		}
 
 		// Print out all the information
-		printf("%d.: %s %s %s; %s; %s\n", i+1, UCI_string, moved, move_type, promo, captured);
+		printf("%d.: %s %s %s; %s; %s\n", i, UCI_string, moved, move_type, promo, captured);
 	}
 	free(moveList);
 	return;
