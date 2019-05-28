@@ -680,18 +680,21 @@ U16 validateMove(Global* global, Board* board, Move move){
 	// Local variables
 	U16 color, opp_color, castle_bit;
 	U16 isLegal = 1;
+	S16 pawn_forward_bitshift;
 
 	// White move
 	if (board->ply % 2){
 		color = White;
 		opp_color = Black;
 		castle_bit = 4;
+		pawn_forward_bitshift = 8;
 	}
 	// Black move
 	else{
 		color = Black;
 		opp_color = White;
 		castle_bit = 60;
+		pawn_forward_bitshift = -8;
 	}
 
 	// Update moving piece
@@ -699,7 +702,9 @@ U16 validateMove(Global* global, Board* board, Move move){
 	setPiece(board, color, move.moving_piece, 0, move.bit_to,    ON);
 
 	// Check for captured piece
-	if (U16GetBit(move.move_type, 0, 2))
+	if (move.move_type == EPCapture)
+		setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, OFF);
+	else if (U16GetBit(move.move_type, 0, 2))
 		setPiece(board, opp_color, move.captured_piece, 0, move.bit_to, OFF);
 
 	// Validating if move leaves player in check
@@ -740,7 +745,10 @@ U16 validateMove(Global* global, Board* board, Move move){
 	setPiece(board, color, move.moving_piece, 0, move.bit_from, ON);
 	setPiece(board, color, move.moving_piece, 0, move.bit_to,  OFF);
 
-	if (U16GetBit(move.move_type, 0, 2))
+	// Check for captured piece
+	if (move.move_type == EPCapture)
+		setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, ON);
+	else if (U16GetBit(move.move_type, 0, 2))
 		setPiece(board, opp_color, move.captured_piece, 0, move.bit_to, ON);
 
 	return isLegal;
@@ -779,7 +787,9 @@ U16 makeMove(Global* global, Board* board, Move move, U16 do_validate){
 	setPiece(board, color, move.moving_piece, 0, move.bit_to, ON);
 
 	// Check for captured piece
-	if (U16GetBit(move.move_type, 0, 2))
+	if (move.move_type == EPCapture)
+		setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, OFF);
+	else if (U16GetBit(move.move_type, 0, 2))
 		setPiece(board, opp_color, move.captured_piece, 0, move.bit_to, OFF);
 
 	// Update castling flags
@@ -845,10 +855,6 @@ U16 makeMove(Global* global, Board* board, Move move, U16 do_validate){
 			setPiece(board, color, Rook, 0, move.bit_from - 4, OFF);
 			setPiece(board, color, Rook, 0, move.bit_from - 1, ON);
 			break;
-
-		case EPCapture:
-			setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, OFF);
-			break;
 	}
 
 	(board->ply)++;
@@ -882,7 +888,9 @@ void undoMove(Global* global, Board* board, Move move, U16 castlingRights, U16 E
 	setPiece(board, color, move.moving_piece, 0, move.bit_to, OFF);
 
 	// Check for captured piece
-	if (U16GetBit(move.move_type, 0, 2))
+	if (move.move_type == EPCapture)
+		setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, ON);
+	else if (U16GetBit(move.move_type, 0, 2))
 		setPiece(board, opp_color, move.captured_piece, 0, move.bit_to, ON);
 
 	// Check for promotion
@@ -916,10 +924,6 @@ void undoMove(Global* global, Board* board, Move move, U16 castlingRights, U16 E
 		case LongCastle:
 			setPiece(board, color, Rook, 0, move.bit_from - 4, ON);
 			setPiece(board, color, Rook, 0, move.bit_from - 1, OFF);
-			break;
-
-		case EPCapture:
-			setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, ON);
 			break;
 	}
 
@@ -1186,6 +1190,27 @@ U16 bitFromAlgeb(char* algebraic){
 	U16 rank = algebraic[1] - 1;
 
 	return 8*rank + file;
+}
+
+void bitTesting(){
+
+	Move move;
+	for(move.move_type = 0; move.move_type <= 15; move.move_type++){
+
+		printf("move_type = %hu", move.move_type);
+
+		if (U16GetBit(move.move_type, 0, 3))
+			printf("\t\tPromotion == Ye");
+		else
+			printf("\t\tPromotion == No");
+
+		if (U16GetBit(move.move_type, 0, 2))
+			printf("\t\tCapture == Ye\n");
+		else
+			printf("\t\tCapture == No\n");
+
+	}
+	return ;
 }
 
 char* moveToUCI(Move move){

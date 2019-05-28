@@ -253,6 +253,9 @@ void compareBoards(Board*, Board*, char*, char*);
 // Debug current board for many functions
 void debugBoard(Global*, Board*, Move, char*);
 
+// Test that bits correspond to proper move types
+void bitTesting();
+
 // Convert algebraic coordinates to bit
 U16 bitFromAlgeb(char*);
 
@@ -290,6 +293,8 @@ void movePrinter(Global*, Board*);
 * - Compress moveToUCI by using the ascii values of a-h and 1-8
 *
 * - Consider compressing memory in Board and Move structs
+*
+* - Potentially keep track of king bits
 *
 ****************************************/
 

@@ -14,9 +14,6 @@ int main(int argc, char* argv[]){
 	Board* board = (Board*)malloc(sizeof(Board));
 	BoardReset(board);
 
-
-
-
 	// Debug chess functions
 	Move move;
 
@@ -304,6 +301,8 @@ int main(int argc, char* argv[]){
 	BoardPrint(board);
 
 	return 0;
+
+
 
 
 
