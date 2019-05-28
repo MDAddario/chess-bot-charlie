@@ -14,10 +14,48 @@ int main(int argc, char* argv[]){
 	Board* board = (Board*)malloc(sizeof(Board));
 	BoardReset(board);
 
-	// Interactive chess playing
-	char input, buffer;
-	Move* move_list;
-	U16 length, move_num, castling_rights, EP_files;
+
+
+
+
+
+
+	// Debug chess functions
+	Move move;
+
+	printf("e4\n");
+	configureMove(&move, 12, 28, DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move);
+	makeMove(global, board, move, NO);
+
+	printf("a6\n");
+	configureMove(&move, 48, 40, Quiet, Pawn, Null_piece);
+	debugBoard(global, board, move);
+	makeMove(global, board, move, NO);
+
+	printf("e5\n");
+	configureMove(&move, 28, 36, Quiet, Pawn, Null_piece);
+	debugBoard(global, board, move);
+	makeMove(global, board, move, NO);
+
+	printf("d5\n");
+	configureMove(&move, 51, 35, DoubleStep, Pawn, Null_piece);
+	debugBoard(global, board, move);
+	makeMove(global, board, move, NO);
+
+	printf("exd\n");
+	configureMove(&move, 36, 43, EPCapture, Pawn, Pawn);
+	debugBoard(global, board, move);
+	makeMove(global, board, move, NO);
+
+	return 0;
+
+
+
+
+
+
+
 
 	/*
 	Obvious move generation bug when playing the following sequence:
@@ -33,7 +71,12 @@ int main(int argc, char* argv[]){
 		- undoMove()
 	*/
 
-	while(1){
+	// Interactive chess playing
+	char input, buffer;
+	Move* move_list;
+	U16 length, move_num, castling_rights, EP_files;
+
+	for(;;){
 
 		BoardPrint(board);
 		printf("\n\nWould you like to makeMove (m) or undoMove (u): ");
@@ -59,21 +102,14 @@ int main(int argc, char* argv[]){
 				printf("You need to make a move first idiot.\n");
 				continue;
 			}
-
 			undoMove(global, board, move_list[move_num], castling_rights, EP_files);
 		}
 		else
 			printf("Please input 'm' or 'u' for make or undo.\n");
-
 	}
-
 	return 0;
 
-	/*
-	// EXAMPLE FEN LOADING
-	// RUN PROGRAM AS:
-	//	./main (FEN STRING)
-
+	// FEN loading
 	if (argc < 5){
 		printf("Please provide a complete FEN string.\n");
 		return -1;
@@ -81,7 +117,6 @@ int main(int argc, char* argv[]){
 	loadFEN(board, argc, argv);
 	BoardPrint(board);
 	return 0;
-	*/
 
 	// Perft testing
 	if (argc < 2){

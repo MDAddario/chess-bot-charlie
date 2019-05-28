@@ -247,6 +247,12 @@ U64 perft(Global*, Board*, U64**, U16, U16);
 // Initial call for perft() function
 void initPerft(Global*, Board*, U16);
 
+// Debugging tool to compare boards
+void compareBoards(Board*, Board*);
+
+// Debug current board for many functions
+void debugBoard(Global*, Board*, Move);
+
 // Convert move to UCI string
 char* moveToUCI(Move);
 
@@ -257,7 +263,6 @@ void movePrinter(Global*, Board*);
 * TO DO LIST:
 *
 * - Make perft() work
-* 		- Track EP and caslting flags
 *
 * - 3 fold repetition
 * - 50 move draw
@@ -268,6 +273,7 @@ void movePrinter(Global*, Board*);
 * - Algebraic reader
 *
 * - Make sure I free() where I malloc() or calloc()
+*		- Particularly for moveGenerators()
 * - Change variables to use_this_type
 * - Change functions to functionLikeThis()
 * - Reorder functions in chess_framework files
