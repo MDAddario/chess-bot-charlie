@@ -1030,23 +1030,32 @@ void perft(Global* global, Board* board, U64** results, U16 current_depth, U16 m
 	Move* move_list;
 	U16 length, castling_rights, EP_files, num_checks;
 
-	// Checks
-	num_checks = isInCheck(global, board, 64, YES);
-	if (num_checks)
-		results[current_depth-1][5] += 1;
+	// Update results from last layer
+	if (current_depth == 0){
 
-	// Double checks
-	if (num_checks == 2)
-		results[current_depth-1][6] += 1;
+		num_checks = isInCheck(global, board, 64, YES);
+		move_list = legalMoveGenerator(global, board, &length, num_checks);
+	}
+	else{
 
-	// Checkmates
-	move_list = legalMoveGenerator(global, board, &length, num_checks);
-	if (length == 0)
-		results[current_depth-1][7] += 1;
+		// Checks
+		num_checks = isInCheck(global, board, 64, YES);
+		if (num_checks)
+			results[current_depth-1][5] += 1;
 
-	/*
-	CURRENTLY NO DISCREPANCY BETWEEN CHECKMATES AND STALEMATES
-	*/
+		// Double checks
+		if (num_checks == 2)
+			results[current_depth-1][6] += 1;
+
+		// Checkmates
+		move_list = legalMoveGenerator(global, board, &length, num_checks);
+		if (length == 0)
+			results[current_depth-1][7] += 1;
+
+		/*
+		CURRENTLY NO DISCREPANCY BETWEEN CHECKMATES AND STALEMATES
+		*/
+	}
 
 	// Nodes
 	results[current_depth][0] += length;
