@@ -272,6 +272,7 @@ void movePrinter(Global*, Board*);
 * TO DO LIST:
 *
 * - Make perft() work
+* - Add perft() for only node count
 *
 * - 3 fold repetition
 * - 50 move draw
