@@ -271,6 +271,13 @@ void movePrinter(Global*, Board*);
 /***************************************
 * TO DO LIST:
 *
+* - Create isCapture() and isPromo() methods for move struct
+* - Make code more legible by adding more struct methods
+* - If something is obscure, make a function for it
+*
+* - Make sure functions only use struct pointers when needed
+* - OR only use struct pointers
+*
 * - Make perft() work
 * - Add perft() for only node count
 *
