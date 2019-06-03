@@ -1,9 +1,6 @@
 #define ON  1
 #define OFF 0
 
-#define YES 1
-#define NO  0
-
 /*	Bitboard chessboard layout (feat. original chess coords)
  *	
  *	56	57	58	59	60	61	62	63		8
@@ -63,12 +60,12 @@ typedef struct StructMove{
 // Global memory for static chess related values
 typedef struct StructChessGlobal{
 
-	U64 captureBB[2][6][64];
+	U64 capture_BB[2][6][64];
 	// Two for each turn (enum TurnIndex)
 	// Six for each piece (enum BBIndex)
 	// 64 for each bit_from
 
-	U64 quietBB[2][6][64];
+	U64 quiet_BB[2][6][64];
 	// Two for each turn (enum TurnIndex)
 	// Six for each piece (enum BBIndex)
 	// 64 for each bit_from
@@ -78,16 +75,16 @@ typedef struct StructChessGlobal{
 // Local memory for board state of given position
 typedef struct StructBoardState{
 
-	U64 piecesBB[8];
+	U64 pieces_BB[8];
 	// Six for pieces (enum BBIndex)
 	// Two for colors (enum BBIndex)
 
-	U16 castlingRights;
+	U16 castling_flags;
 	// First four bits (enum CastlingKeys)
 	// White short, long
 	// Black short, long
 
-	U16 EPFiles;
+	U16 EP_flags;
 	// First 8 bits for 8 files
 
 	U16 ply;
@@ -172,20 +169,30 @@ U16 U64GetBit(U64, U16, U16);
 void U16SetBit(U16*, U16, U16, U16);
 U16 U16GetBit(U16, U16, U16);
 
+// Determine if move is a promotion
+U16 isPromo(Move);
+
+// Determine if move is a capture
+U16 isCapture(Move);
+
+// More simplified functions
+void setCastleFlag(Board*, U16, U16);
+void setEPFlag(Board*, U16, U16);
+
 // Set piece on board by color and piece type
 void setPiece(Board*, U16, U16, U16, U16, U16);
 
 // Print BB
 void BBPrint(U64);
 
-// Place pieces in initial positions, reset castling and EP flags
-void BoardReset(Board*);
+// Load the starting position
+void BoardStart(Board*);
 
 // Print board
 void BoardPrint(Board*);
 
 // Setup board based off of FEN string
-void loadFEN(Board*, U16, char**);
+void loadFEN(Board*, char*);
 
 // Load capture and quiet BBs
 void GlobalLoadBBs(Global*);
@@ -222,7 +229,7 @@ U16 validateMove(Global*, Board*, Move);
  */
 
 // Execute move and increment ply, update castle and EP flags
-U16 makeMove(Global*, Board*, Move, U16);
+U16 makeMove(Global*, Board*, Move);
 /* Return codes:
  * 1: Move successful
  * 0: Move illegal (only when do_validate == 1)
@@ -232,7 +239,7 @@ U16 makeMove(Global*, Board*, Move, U16);
 void undoMove(Global*, Board*, Move, U16, U16);
 
 // Verify if current-turn player in check
-U16 isInCheck(Global*, Board*, U16, U16);
+U16 isInCheck(Global*, Board*, U16);
 /* Return codes:
  * 0: Not in check
  * 1: Check (can capture checking piece, intercept, or move king)
@@ -271,14 +278,13 @@ void movePrinter(Global*, Board*);
 /***************************************
 * TO DO LIST:
 *
-* - Create isCapture() and isPromo() methods for move struct
-* - Make code more legible by adding more struct methods
-* - If something is obscure, make a function for it
+* - Check if C has inline functions
+* - Learn ifdef
 *
-* - Make sure functions only use struct pointers when needed
-* - OR only use struct pointers
+* - Isolate moveGen() for bishop/rook/queen?????
 *
-* - Make perft() work
+* - Load turn specific things into global struct
+*
 * - Add perft() for only node count
 *
 * - 3 fold repetition
@@ -286,14 +292,14 @@ void movePrinter(Global*, Board*);
 *		- Fix in loadFEN()
 * - insufficientMaterial()
 * - Determine checkmate and stalemate status
-* - FEN reader
 * - Algebraic reader
-* - Use FEN for BoardReset()
 *
 * - Make sure I free() where I malloc() or calloc()
 *		- Particularly for moveGenerators()
+*
 * - Change variables to use_this_type
 * - Change functions to functionLikeThis()
+*
 * - Reorder functions in chess_framework files
 *
 * - Tidy up Makefile

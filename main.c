@@ -12,13 +12,7 @@ int main(int argc, char* argv[]){
 
 	// Load board state
 	Board* board = (Board*)malloc(sizeof(Board));
-	BoardReset(board);
-
-	/*
-	// Debug chess functions
-	unitTests(global, board);
-	return 0;
-	*/
+	BoardStart(board);
 
 	/*
 	// Interactive chess playing
@@ -59,13 +53,6 @@ int main(int argc, char* argv[]){
 	}
 	return 0;
 	*/
-
-	// FEN loading
-	if (argc < 6){
-		printf("Please provide a complete FEN string.\n");
-		return -1;
-	}
-	loadFEN(board, argc, argv);
 
 	// Perft testing
 	if (argc < 2){
