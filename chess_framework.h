@@ -1,13 +1,6 @@
-#define ON  1
-#define OFF 0
-
 // Integer types
 typedef unsigned long long U64;
 typedef   signed long long S64;
-typedef unsigned       int U32;
-typedef   signed       int S32;
-typedef unsigned     short U16;
-typedef   signed     short S16;
 typedef unsigned       char U8;
 typedef   signed       char S8;
 
@@ -44,6 +37,20 @@ typedef struct StructChessGlobal{
 	// Six for each piece (enum BBIndex)
 	// 64 for each bit_from
 
+	// The following are turn specific information
+	U8 color[2];
+	U8 opp_color[2];
+	U8 opp_turn[2];
+	U8 pawn_starting_rank[2];
+	S8 pawn_forward_bitshift[2];
+	U8 pawn_EP_rank[2];
+	S8 pawn_EP_left_bitshift[2];
+	S8 pawn_EP_right_bitshift[2];
+	U8 pawn_promo_rank[2];
+	U8 short_key[2];
+	U8 long_key[2];
+	U8 castle_bit[2];
+
 } Global;
 
 // Local memory for board state of given position
@@ -61,7 +68,7 @@ typedef struct StructBoardState{
 	U8 EP_flags;
 	// First 8 bits for 8 files
 
-	U16 ply;
+	U8 ply;
 	// Keeps track of number of halfmoves
 
 } Board;
@@ -142,8 +149,11 @@ static inline void U8SetBitOn(U8*, U8);
 static inline void U8SetBitOff(U8*, U8);
 
 // Getters
-static inline U8 U64GetBit(U64, U8, U8);
+static inline U64 U64GetBit(U64, U8, U8);
 static inline U8 U8GetBit(U8, U8);
+
+// Deprecated
+void U64SetBit(U64*, U8, U8, U8);
 
 // Determine if move is a promotion or capture
 static inline U8 isPromo(Move);
@@ -185,6 +195,9 @@ void GlobalLoadBBs(Global*);
 // Filenames for captureBB and quietBB
 char* filenames_capture[2][6];
 char* filenames_quiet[2][6];
+
+// Load turn specific values
+void GlobalLoadTurns(Global* global);
 
 // Check if rank and file within board dims
 U8 isRankFileInBounds(U8, U8);
@@ -267,24 +280,11 @@ void movePrinter(Global*, Board*);
 *
 * - Have a function for tracking castling_flags and EP_flags
 *
-* - Consider U64GetBit by bit only, not rank and file
-*
-* - Consider U64SetOn and U64SetOff instead of the toggle
-*
-* - Resolve static inline issues for U64SetBit() and isRankFileInBounds()
-*
-* - Look into hex 0x integer notation
-*
 * - Instead of using bits as integers, only use U64s to make comparisons faster
 *
 * - Preload sliding bitboards and king space bitboards from all starting bits
 *
 * - Isolate moveGen() for bishop/rook/queen?????
-*
-* - Load turn specific things (turn, color, opp_color) into global struct
-*		- Increment the active set of values in makeMove() / undoMove()
-*
-* - Try and remove all raw use of UxxGetBit or UxxSetBit, cover them up in helper functions
 *
 * - 3 fold repetition
 * - 50 move draw
@@ -296,24 +296,19 @@ void movePrinter(Global*, Board*);
 * - Make sure I free() where I malloc() or calloc()
 *		- Particularly for moveGenerators()
 *
-* - Change variables to use_this_type
-* - Change functions to functionLikeThis()
-*
 * - Reorder functions in chess_framework files
 *
 * - Tidy up Makefile and files
 *
 * - Make sure all declared variables in pseudoMoveGenerator() are used
-* 
+*
 * - Compress moveToUCI by using the ascii values of a-h and 1-8
 *
 * - Compress memory in Board and Move structs
-* - Implement U8 and S8 data types
 *
 * - Potentially keep track of king bits
 * - Consider setting Global* and Board* as global variables
 *
-* - Make sure all used data types are appropriate
 *
 * - Inside makeMove(), consider a more efficient piece movement by
 * 	having a bitmask that has bit_from and bit_to as the only active

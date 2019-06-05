@@ -9,6 +9,7 @@ int main(int argc, char* argv[]){
 	// Load global chess information
 	Global* global = (Global*)malloc(sizeof(Global));
 	GlobalLoadBBs(global);
+	GlobalLoadTurns(global);
 
 	// Load board state
 	Board* board = (Board*)malloc(sizeof(Board));
@@ -30,6 +31,6 @@ int main(int argc, char* argv[]){
 		printf("Please provide depth for perft() function.\n");
 		return -1;
 	}
-	initPerft(global, board, atoi(argv[1]), OFF);
+	initPerft(global, board, atoi(argv[1]), 0);
 	return 0;
 }
