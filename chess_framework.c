@@ -710,7 +710,7 @@ U16 validateMove(Global* global, Board* board, Move move){
 	// Validating if move leaves player in check
 	if (move.moving_piece != King){
 		
-		if (isInCheck(global, board, 64, NO))
+		if (isInCheck(global, board, 64, YES))
 			isLegal = 0;
 	}
 
