@@ -242,7 +242,7 @@ U16 isInCheck(Global*, Board*, U16, U16);
  */
 
 // (PERF)ormance (T)est to test move generation, up to 3-fold and 50-move
-U64 perft(Global*, Board*, U64**, U16, U16);
+void perft(Global*, Board*, U64**, U16, U16);
 
 // Initial call for perft() function
 void initPerft(Global*, Board*, U16);
@@ -279,6 +279,7 @@ void movePrinter(Global*, Board*);
 * - OR only use struct pointers
 *
 * - Make perft() work
+* - Add perft() for only node count
 *
 * - 3 fold repetition
 * - 50 move draw
