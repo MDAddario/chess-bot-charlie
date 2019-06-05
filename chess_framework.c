@@ -4,7 +4,42 @@
 #include <time.h>
 #include "chess_framework.h"
 
-static inline void U64SetBit(U64* BB, U16 rank, U16 file, U16 toggle){
+static inline void U64SetBitOn(U64* number, U8 rank, U8 file){
+
+	*number |= 1ULL << rank*8 + file;
+	return;
+}
+
+static inline void U64SetBitOff(U64* number, U8 rank, U8 file){
+
+	*number &= ~(1ULL << rank*8 + file);
+	return;
+}
+
+static inline void U8SetBitOn(U8* number, U8 bit){
+
+	*number |= 1 << bit;
+	return;
+}
+
+static inline void U8SetBitOff(U8* number, U8 bit){
+
+	*number &= ~(1 << bit);
+	return;
+}
+
+static inline U8 U64GetBit(U64 number, U8 rank, U8 file){
+
+	return number >> rank*8 + file & 1ULL;
+}
+
+static inline U8 U8GetBit(U8 number, U8 bit){
+
+	return number >> bit & 1;
+}
+
+/*
+void U64SetBit(U64* BB, U16 rank, U16 file, U16 toggle){
 
 	if (toggle)
 		*BB |= 1ULL << rank*8 + file;
@@ -13,69 +48,99 @@ static inline void U64SetBit(U64* BB, U16 rank, U16 file, U16 toggle){
 	return;
 }
 
-static inline U16 U64GetBit(U64 BB, U16 rank, U16 file){
+U16 U64GetBit(U64 BB, U16 rank, U16 file){
 
 	return BB >> rank*8 + file & 1ULL;
 }
+*/
 
-static inline void U16SetBit(U16* number, U16 rank, U16 file, U16 toggle){
+static inline U8 isPromo(Move move){
 
-	if (toggle)
-		*number |= 1 << rank*8 + file;
-	else
-		*number &= ~(1 << rank*8 + file);
+	return U8GetBit(move.move_type, 3);
+}
+
+static inline U8 isCapture(Move move){
+
+	return U8GetBit(move.move_type, 2);
+}
+
+static inline void setCastlingFlagOn(Board* board, U8 bit){
+
+	U8SetBitOn(&(board->castling_flags), bit);
 	return;
 }
 
-static inline U16 U16GetBit(U16 number, U16 rank, U16 file){
+static inline void setCastlingFlagOff(Board* board, U8 bit){
 
-	return number >> rank*8 + file & 1;
-}
-
-static inline U16 isPromo(Move move){
-
-	return U16GetBit(move.move_type, 0, 3);
-}
-
-static inline U16 isCapture(Move move){
-
-	return U16GetBit(move.move_type, 0, 2);
-}
-
-static inline void setCastlingFlag(Board* board, U16 bit, U16 toggle){
-
-	U16SetBit(&(board->castling_flags), 0, bit, toggle);
+	U8SetBitOff(&(board->castling_flags), bit);
 	return;
 }
 
-static inline void setEPFlag(Board* board, U16 bit, U16 toggle){
+static inline void setEPFlagOn(Board* board, U8 bit){
 
-	U16SetBit(&(board->EP_flags), 0, bit, toggle);
+	U8SetBitOn(&(board->EP_flags), bit);
 	return;
 }
 
-static inline U16 getCastlingFlag(Board* board, U16 bit){
+static inline void setEPFlagOff(Board* board, U8 bit){
 
-	return U16GetBit(board->castling_flags, 0, bit);
+	U8SetBitOff(&(board->EP_flags), bit);
+	return;
 }
 
-static inline U16 getEPFlag(Board* board, U16 bit){
+static inline U8 getCastlingFlag(Board* board, U8 bit){
 
-	return U16GetBit(board->EP_flags, 0, bit);
+	return U8GetBit(board->castling_flags, bit);
 }
 
-static inline void setPiece(Board* board, U16 color, U16 piece, U16 rank, U16 file, U16 toggle){
+static inline U8 getEPFlag(Board* board, U8 bit){
 
-	U64SetBit(board->pieces_BB + color, rank, file, toggle);
-	U64SetBit(board->pieces_BB + piece, rank, file, toggle);
+	return U8GetBit(board->EP_flags, bit);
+}
+
+static inline void clearPiecesBB(Board* board){
+
+	memset(&(board->pieces_BB), 0, 64);
+	return;
+}
+
+static inline void lowerAllCastlingFlags(Board* board){
+
+	board->castling_flags &= 0xF0;
+	return;
+}
+
+static inline void raiseAllCastlingFlags(Board* board){
+
+	board->castling_flags |= 0x0F;
+	return;
+}
+
+static inline void lowerAllEPFlags(Board* board){
+
+	board->EP_flags &= 0x00;
+	return;
+}
+
+static inline void setPieceOn(Board* board, U8 color, U8 piece, U8 rank, U8 file){
+
+	U64SetBitOn(board->pieces_BB + color, rank, file);
+	U64SetBitOn(board->pieces_BB + piece, rank, file);
+	return;
+}
+
+static inline void setPieceOff(Board* board, U8 color, U8 piece, U8 rank, U8 file){
+
+	U64SetBitOff(board->pieces_BB + color, rank, file);
+	U64SetBitOff(board->pieces_BB + piece, rank, file);
 	return;
 }
 
 void BBPrint(U64 BB){
 
-	for(S16 rank = 7; rank >= 0; rank--){
+	for(S8 rank = 7; rank >= 0; rank--){
 		printf("[");
-		for(U16 file = 0; file < 8; file++){
+		for(U8 file = 0; file < 8; file++){
 
 			if (U64GetBit(BB, rank, file))
 				printf("  X  ");
@@ -97,11 +162,11 @@ void BoardPrint(Board* board){
 
 	char color;
 
-	for(S16 rank = 7; rank >= 0; rank--){
+	for(S8 rank = 7; rank >= 0; rank--){
 
 		printf("[");
 		
-		for(U16 file = 0; file < 8; file++){
+		for(U8 file = 0; file < 8; file++){
 
 			color = '\0';
 			
@@ -111,7 +176,7 @@ void BoardPrint(Board* board){
 				color = 'b';
 
 			if (color){
-				for(U16 piece = Pawn; piece <= King; piece++){
+				for(U8 piece = Pawn; piece <= King; piece++){
 					if (U64GetBit(board->pieces_BB[piece], rank, file)){
 
 						switch(piece){
@@ -151,20 +216,18 @@ void BoardPrint(Board* board){
 void loadFEN(Board* board, char* FEN_string){
 
 	// Clear board
-	memset(&(board->pieces_BB), OFF, 64);
+	clearPiecesBB(board);
 
 	// Castling rights
-	for (U16 i = 0; i < 4; i++)
-		setCastlingFlag(board, i, OFF);
+	lowerAllCastlingFlags(board);
 
 	// EP rights
-	for (U16 i = 0; i < 8; i++)
-		setEPFlag(board, i, OFF);
+	lowerAllEPFlags(board);
 
 	// Parse piece layout
 	char* cptr = FEN_string;
-	for(S16 rank = 7; rank >= 0; rank--){
-		for(U16 file = 0; file < 8;){
+	for(S8 rank = 7; rank >= 0; rank--){
+		for(U8 file = 0; file < 8;){
 
 			// Empty spaces
 			if (49 <= *cptr && *cptr <= 57){
@@ -176,41 +239,41 @@ void loadFEN(Board* board, char* FEN_string){
 				switch(*cptr){
 							
 					case 'P':
-						setPiece(board, White, Pawn, rank, file, ON);
+						setPieceOn(board, White, Pawn, rank, file);
 						break;
 					case 'N':
-						setPiece(board, White, Knight, rank, file, ON);
+						setPieceOn(board, White, Knight, rank, file);
 						break;
 					case 'B':
-						setPiece(board, White, Bishop, rank, file, ON);
+						setPieceOn(board, White, Bishop, rank, file);
 						break;
 					case 'R':
-						setPiece(board, White, Rook, rank, file, ON);
+						setPieceOn(board, White, Rook, rank, file);
 						break;
 					case 'Q':
-						setPiece(board, White, Queen, rank, file, ON);
+						setPieceOn(board, White, Queen, rank, file);
 						break;
 					case 'K':
-						setPiece(board, White, King, rank, file, ON);
+						setPieceOn(board, White, King, rank, file);
 						break;
 
 					case 'p':
-						setPiece(board, Black, Pawn, rank, file, ON);
+						setPieceOn(board, Black, Pawn, rank, file);
 						break;
 					case 'n':
-						setPiece(board, Black, Knight, rank, file, ON);
+						setPieceOn(board, Black, Knight, rank, file);
 						break;
 					case 'b':
-						setPiece(board, Black, Bishop, rank, file, ON);
+						setPieceOn(board, Black, Bishop, rank, file);
 						break;
 					case 'r':
-						setPiece(board, Black, Rook, rank, file, ON);
+						setPieceOn(board, Black, Rook, rank, file);
 						break;
 					case 'q':
-						setPiece(board, Black, Queen, rank, file, ON);
+						setPieceOn(board, Black, Queen, rank, file);
 						break;
 					case 'k':
-						setPiece(board, Black, King, rank, file, ON);
+						setPieceOn(board, Black, King, rank, file);
 						break;
 				}
 				file++;
@@ -235,16 +298,16 @@ void loadFEN(Board* board, char* FEN_string){
 			switch(*cptr){
 							
 				case 'K':
-					setCastlingFlag(board, ShortW, ON);
+					setCastlingFlagOn(board, ShortW);
 					break;
 				case 'Q':
-					setCastlingFlag(board, LongW, ON);
+					setCastlingFlagOn(board, LongW);
 					break;
 				case 'k':
-					setCastlingFlag(board, ShortB, ON);
+					setCastlingFlagOn(board, ShortB);
 					break;
 				case 'q':
-					setCastlingFlag(board, LongB, ON);
+					setCastlingFlagOn(board, LongB);
 					break;
 			}
 			cptr++;
@@ -256,7 +319,7 @@ void loadFEN(Board* board, char* FEN_string){
 
 	// EP flag
 	if (*cptr != '-'){
-		setEPFlag(board, *cptr-97, ON);
+		setEPFlagOn(board, *cptr-97);
 		cptr += 2;
 	}
 	else
@@ -291,9 +354,9 @@ void GlobalLoadBBs(Global* global){
 	FILE* fptr;
 	U64 BB;
 
-	for(U16 turn = BlackTurn; turn <= WhiteTurn; turn++){
+	for(U8 turn = BlackTurn; turn <= WhiteTurn; turn++){
 
-		for(U16 piece = Pawn; piece <= King; piece++){
+		for(U8 piece = Pawn; piece <= King; piece++){
 
 			strcpy(filename, "./captureBB/");
 			strcat(filename, filenames_capture[turn][piece]);
@@ -305,7 +368,7 @@ void GlobalLoadBBs(Global* global){
 				return;
 			}
 
-			for(U16 bit_from = 0; bit_from < 64; bit_from++){
+			for(U8 bit_from = 0; bit_from < 64; bit_from++){
 
 				fscanf(fptr, "%llu\n", &BB);
 				global->capture_BB[turn][piece][bit_from] = BB;
@@ -313,7 +376,7 @@ void GlobalLoadBBs(Global* global){
 			fclose(fptr);
 		}
 
-		for(U16 piece = Pawn; piece <= King; piece++){
+		for(U8 piece = Pawn; piece <= King; piece++){
 
 			strcpy(filename, "./quietBB/");
 			strcat(filename, filenames_quiet[turn][piece]);
@@ -325,7 +388,7 @@ void GlobalLoadBBs(Global* global){
 				return;
 			}
 
-			for(U16 bit_from = 0; bit_from < 64; bit_from++){
+			for(U8 bit_from = 0; bit_from < 64; bit_from++){
 
 				fscanf(fptr, "%llu\n", &BB);
 				global->quiet_BB[turn][piece][bit_from] = BB;
@@ -363,12 +426,12 @@ char* filenames_quiet[2][6] = {"black_pawn_quiet.txt",
 								"white_queen_quiet.txt",
 								"white_king_quiet.txt"};
 
-static inline U16 isRankFileInBounds(U16 rank, U16 file){
+U8 isRankFileInBounds(U8 rank, U8 file){
 
 	return rank < 8 && file < 8;	// Thanks to unsigned overflow
 }
 
-Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_checks){
+Move* pseudoMoveGenerator(Global* global, Board* board, U8* length, U8 num_checks){
 
 	// Allocate memory for move list
 	Move* list = (Move*)malloc(250*sizeof(Move));
@@ -382,9 +445,9 @@ Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_che
 	U64 quiet_mask, capture_mask;
 
 	// Local variables
-	U16 rank_from, file_from, rank_to, file_to, captured, turn, color, opp_color,
+	U8 rank_from, file_from, rank_to, file_to, captured, turn, color, opp_color,
 		pawn_starting_rank, pawn_EP_rank, pawn_promo_rank, short_key, long_key;
-	S16 pawn_forward_bitshift, pawn_EP_left_bitshift, pawn_EP_right_bitshift;
+	S8 pawn_forward_bitshift, pawn_EP_left_bitshift, pawn_EP_right_bitshift;
 
 	// White turn to play
 	if (board->ply % 2){
@@ -418,7 +481,7 @@ Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_che
 	// If in double check, king MUST move
 	if (num_checks == 2){
 
-		for(U16 bit_from = 0; bit_from < 64; bit_from++)
+		for(U8 bit_from = 0; bit_from < 64; bit_from++)
 			if (U64GetBit(board->pieces_BB[King], 0, bit_from))
 				if (U64GetBit(board->pieces_BB[color], 0, bit_from)){
 
@@ -426,7 +489,7 @@ Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_che
 					capture_mask = global->capture_BB[turn][King][bit_from] & board->pieces_BB[opp_color];
 
 					// Determine list of potential moves
-					for(U16 bit_to = 0; bit_to < 64; bit_to++){
+					for(U8 bit_to = 0; bit_to < 64; bit_to++){
 
 						// Quiet moves
 						if (U64GetBit(quiet_mask, 0, bit_to)){
@@ -452,11 +515,11 @@ Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_che
 	}
 
 	// Scan BB for friendly pieces
-	for(U16 bit_from = 0; bit_from < 64; bit_from++){
+	for(U8 bit_from = 0; bit_from < 64; bit_from++){
 		if (U64GetBit(board->pieces_BB[color], 0, bit_from)){
 
 			// Scan piece types
-			for(U16 piece = Pawn; piece <= King; piece++){
+			for(U8 piece = Pawn; piece <= King; piece++){
 				if (U64GetBit(board->pieces_BB[piece], 0, bit_from)){
 
 					// Pawns
@@ -501,14 +564,14 @@ Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_che
 						}
 
 						// Determine list of potential moves (pawn specific for promotions)
-						for(U16 bit_to = 0; bit_to < 64; bit_to++){
+						for(U8 bit_to = 0; bit_to < 64; bit_to++){
 
 							// Quiet moves
 							if (U64GetBit(quiet_mask, 0, bit_to)){
 
 								// Promotion
 								if (rank_from == pawn_promo_rank){
-									for (U16 promo = RPromo; promo <= QPromo; promo++){
+									for (U8 promo = RPromo; promo <= QPromo; promo++){
 										configureMove(list+*length, bit_from, bit_to, promo, Pawn, Null_piece);
 										(*length)++;
 									}
@@ -529,7 +592,7 @@ Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_che
 
 								// Promotion
 								if (rank_from == pawn_promo_rank){
-									for (U16 promoCap = RPromoCapture; promoCap <= QPromoCapture; promoCap++){
+									for (U8 promoCap = RPromoCapture; promoCap <= QPromoCapture; promoCap++){
 										configureMove(list+*length, bit_from, bit_to, promoCap, Pawn, captured);
 										(*length)++;
 									}
@@ -589,7 +652,7 @@ Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_che
 						rank_from = bit_from / 8;
 						file_from = bit_from % 8;
 
-						for(U16 direction = 0; direction < 8; direction++){
+						for(U8 direction = 0; direction < 8; direction++){
 
 							rank_to = rank_from + delta_rank[direction];
 							file_to = file_from + delta_file[direction];
@@ -598,14 +661,14 @@ Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_che
 
 								// If square empty, add to quiet moves BB
 								if (U64GetBit(empty_BB, rank_to, file_to)){
-									U64SetBit(&quiet_mask, rank_to, file_to, ON);
+									U64SetBitOn(&quiet_mask, rank_to, file_to);
 									rank_to += delta_rank[direction];
 									file_to += delta_file[direction];
 									continue;
 								}
 								// If square of opposite color, add to capture BB
 								else if (U64GetBit(board->pieces_BB[opp_color], rank_to, file_to))
-									U64SetBit(&capture_mask, rank_to, file_to, ON);
+									U64SetBitOn(&capture_mask, rank_to, file_to);
 								break;
 							}
 						}
@@ -616,7 +679,7 @@ Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_che
 					}
 
 					// Determine list of potential moves (for all but pawn)
-					for(U16 bit_to = 0; bit_to < 64; bit_to++){
+					for(U8 bit_to = 0; bit_to < 64; bit_to++){
 
 						// Quiet moves
 						if (U64GetBit(quiet_mask, 0, bit_to)){
@@ -645,21 +708,21 @@ Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_che
 	return list;
 }
 
-S16 delta_rank[8] = {0, 1, 1, 1, 0, -1, -1, -1};
-S16 delta_file[8] = {1, 1, 0, -1, -1, -1, 0, 1};
+S8 delta_rank[8] = {0, 1, 1, 1, 0, -1, -1, -1};
+S8 delta_file[8] = {1, 1, 0, -1, -1, -1, 0, 1};
 
-Move* legalMoveGenerator(Global* global, Board* board, U16* real_length, U16 num_checks){
+Move* legalMoveGenerator(Global* global, Board* board, U8* real_length, U8 num_checks){
 
 	Move* pseudo_list; 
 	Move* legal_list;
-	U16 pseudo_length;
+	U8 pseudo_length;
 
 	pseudo_list = pseudoMoveGenerator(global, board, &pseudo_length, num_checks);
 	legal_list = (Move*)malloc(pseudo_length * sizeof(Move));
 
 	*real_length = 0;
 
-	for(U16 i = 0; i < pseudo_length; i++){
+	for(U8 i = 0; i < pseudo_length; i++){
 
 		if (validateMove(global, board, pseudo_list[i])){
 
@@ -674,7 +737,8 @@ Move* legalMoveGenerator(Global* global, Board* board, U16* real_length, U16 num
 	return legal_list;
 }
 
-static inline void configureMove(Move* move, U16 bit_from, U16 bit_to, U16 move_type, U16 moving, U16 captured){
+static inline void configureMove(Move* move, U8 bit_from, U8 bit_to,
+									U8 move_type, U8 moving, U8 captured){
 
 	move->bit_from 		 = bit_from;
 	move->bit_to 		 = bit_to;
@@ -684,12 +748,12 @@ static inline void configureMove(Move* move, U16 bit_from, U16 bit_to, U16 move_
 	return;
 }
 
-U16 validateMove(Global* global, Board* board, Move move){
+U8 validateMove(Global* global, Board* board, Move move){
 
 	// Local variables
-	U16 color, opp_color, castle_bit;
-	U16 isLegal = 1;
-	S16 pawn_forward_bitshift;
+	U8 color, opp_color, castle_bit;
+	U8 isLegal = 1;
+	S8 pawn_forward_bitshift;
 
 	// White move
 	if (board->ply % 2){
@@ -708,13 +772,13 @@ U16 validateMove(Global* global, Board* board, Move move){
 
 	// Check for captured piece
 	if (move.move_type == EPCapture)
-		setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, OFF);
+		setPieceOff(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift);
 	else if (isCapture(move))
-		setPiece(board, opp_color, move.captured_piece, 0, move.bit_to, OFF);
+		setPieceOff(board, opp_color, move.captured_piece, 0, move.bit_to);
 
 	// Update moving piece
-	setPiece(board, color, move.moving_piece, 0, move.bit_from, OFF);
-	setPiece(board, color, move.moving_piece, 0, move.bit_to, ON);
+	setPieceOff(board, color, move.moving_piece, 0, move.bit_from);
+	setPieceOn(board, color, move.moving_piece, 0, move.bit_to);
 
 	// Validating if move leaves player in check
 	if (move.moving_piece != King){
@@ -751,23 +815,23 @@ U16 validateMove(Global* global, Board* board, Move move){
 	}
 
 	// Revert changes
-	setPiece(board, color, move.moving_piece, 0, move.bit_from, ON);
-	setPiece(board, color, move.moving_piece, 0, move.bit_to,  OFF);
+	setPieceOn(board, color, move.moving_piece, 0, move.bit_from);
+	setPieceOff(board, color, move.moving_piece, 0, move.bit_to);
 
 	// Check for captured piece
 	if (move.move_type == EPCapture)
-		setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, ON);
+		setPieceOn(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift);
 	else if (isCapture(move))
-		setPiece(board, opp_color, move.captured_piece, 0, move.bit_to, ON);
+		setPieceOn(board, opp_color, move.captured_piece, 0, move.bit_to);
 
 	return isLegal;
 }
 
-U16 makeMove(Global* global, Board* board, Move move){
+void makeMove(Global* global, Board* board, Move move){
 
 	// Local variables
-	U16 turn, color, opp_color, file, castle_bit;
-	S16 pawn_forward_bitshift;
+	U8 turn, color, opp_color, file, castle_bit;
+	S8 pawn_forward_bitshift;
 
 	// White move
 	if (board->ply % 2){
@@ -788,92 +852,91 @@ U16 makeMove(Global* global, Board* board, Move move){
 
 	// Check for captured piece
 	if (move.move_type == EPCapture)
-		setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, OFF);
+		setPieceOff(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift);
 	else if (isCapture(move))
-		setPiece(board, opp_color, move.captured_piece, 0, move.bit_to, OFF);
+		setPieceOff(board, opp_color, move.captured_piece, 0, move.bit_to);
 
 	// Update moving piece
-	setPiece(board, color, move.moving_piece, 0, move.bit_from, OFF);
-	setPiece(board, color, move.moving_piece, 0, move.bit_to, ON);
+	setPieceOff(board, color, move.moving_piece, 0, move.bit_from);
+	setPieceOn(board, color, move.moving_piece, 0, move.bit_to);
 
 	// Update castling flags
 	if (move.bit_from == 4){						// White king bit
-		setCastlingFlag(board, LongW, OFF);
-		setCastlingFlag(board, ShortW, OFF);
+		setCastlingFlagOff(board, LongW);
+		setCastlingFlagOff(board, ShortW);
 	}
 	if (move.bit_from == 60){						// Black king bit
-		setCastlingFlag(board, LongB, OFF);
-		setCastlingFlag(board, ShortB, OFF);
+		setCastlingFlagOff(board, LongB);
+		setCastlingFlagOff(board, ShortB);
 	}
 	if (move.bit_from == 0 || move.bit_to == 0)		// White queen rook bit
-		setCastlingFlag(board, LongW, OFF);
+		setCastlingFlagOff(board, LongW);
 
 	if (move.bit_from == 7 || move.bit_to == 7)		// White king rook bit
-		setCastlingFlag(board, ShortW, OFF);
+		setCastlingFlagOff(board, ShortW);
 	
 	if (move.bit_from == 56 || move.bit_to == 56)	// Black queen rook bit
-		setCastlingFlag(board, LongB, OFF);
+		setCastlingFlagOff(board, LongB);
 	
 	if (move.bit_from == 63 || move.bit_to == 63)	// Black king rook bit
-		setCastlingFlag(board, ShortB, OFF);
+		setCastlingFlagOff(board, ShortB);
 
 	// Check for promotion
 	if (isPromo(move)){
 
-		U64SetBit(board->pieces_BB + Pawn, 0, move.bit_to, OFF);
+		U64SetBitOff(board->pieces_BB + Pawn, 0, move.bit_to);
 
 		switch((move.move_type - RPromo) % 4){
 						
 			case 0:
-				U64SetBit(board->pieces_BB + Rook, 0, move.bit_to, ON);
+				U64SetBitOn(board->pieces_BB + Rook, 0, move.bit_to);
 				break;
 			case 1:
-				U64SetBit(board->pieces_BB + Knight, 0, move.bit_to, ON);
+				U64SetBitOn(board->pieces_BB + Knight, 0, move.bit_to);
 				break;
 			case 2:
-				U64SetBit(board->pieces_BB + Bishop, 0, move.bit_to, ON);
+				U64SetBitOn(board->pieces_BB + Bishop, 0, move.bit_to);
 				break;
 			case 3:
-				U64SetBit(board->pieces_BB + Queen, 0, move.bit_to, ON);
+				U64SetBitOn(board->pieces_BB + Queen, 0, move.bit_to);
 				break;
 		}
 	}
 
 	// Reset EP flags
-	for (U16 i = 0; i < 8; i++)
-		setEPFlag(board, i, OFF);
+	lowerAllEPFlags(board);
 
 	// Special cases
 	switch(move.move_type){
 
 		case DoubleStep:
 			file = move.bit_from % 8;
-			setEPFlag(board, file, ON);
+			setEPFlagOn(board, file);
 			break;
 
 		case ShortCastle:
-			setPiece(board, color, Rook, 0, move.bit_from + 3, OFF);
-			setPiece(board, color, Rook, 0, move.bit_from + 1, ON);
+			setPieceOff(board, color, Rook, 0, move.bit_from + 3);
+			setPieceOn(board, color, Rook, 0, move.bit_from + 1);
 			break;
 
 		case LongCastle:
-			setPiece(board, color, Rook, 0, move.bit_from - 4, OFF);
-			setPiece(board, color, Rook, 0, move.bit_from - 1, ON);
+			setPieceOff(board, color, Rook, 0, move.bit_from - 4);
+			setPieceOn(board, color, Rook, 0, move.bit_from - 1);
 			break;
 	}
 
 	(board->ply)++;
-	return 1;
+	return;
 }
 
-void undoMove(Global* global, Board* board, Move move, U16 castling_flags, U16 EP_flags){
+void undoMove(Global* global, Board* board, Move move, U8 castling_flags, U8 EP_flags){
 
 	// Countback ply
 	(board->ply)--;
 
 	// Local variables
-	U16 color, opp_color;
-	S16 pawn_forward_bitshift;
+	U8 color, opp_color;
+	S8 pawn_forward_bitshift;
 
 	// White move
 	if (board->ply % 2){
@@ -889,14 +952,14 @@ void undoMove(Global* global, Board* board, Move move, U16 castling_flags, U16 E
 	}
 
 	// Update moving piece
-	setPiece(board, color, move.moving_piece, 0, move.bit_from, ON);
-	setPiece(board, color, move.moving_piece, 0, move.bit_to, OFF);
+	setPieceOn(board, color, move.moving_piece, 0, move.bit_from);
+	setPieceOff(board, color, move.moving_piece, 0, move.bit_to);
 
 	// Check for captured piece
 	if (move.move_type == EPCapture)
-		setPiece(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift, ON);
+		setPieceOn(board, opp_color, Pawn, 0, move.bit_to - pawn_forward_bitshift);
 	else if (isCapture(move))
-		setPiece(board, opp_color, move.captured_piece, 0, move.bit_to, ON);
+		setPieceOn(board, opp_color, move.captured_piece, 0, move.bit_to);
 
 	// Check for promotion
 	if (isPromo(move)){
@@ -904,16 +967,16 @@ void undoMove(Global* global, Board* board, Move move, U16 castling_flags, U16 E
 		switch((move.move_type - RPromo) % 4){
 						
 			case 0:
-				U64SetBit(board->pieces_BB + Rook, 0, move.bit_to, OFF);
+				U64SetBitOff(board->pieces_BB + Rook, 0, move.bit_to);
 				break;
 			case 1:
-				U64SetBit(board->pieces_BB + Knight, 0, move.bit_to, OFF);
+				U64SetBitOff(board->pieces_BB + Knight, 0, move.bit_to);
 				break;
 			case 2:
-				U64SetBit(board->pieces_BB + Bishop, 0, move.bit_to, OFF);
+				U64SetBitOff(board->pieces_BB + Bishop, 0, move.bit_to);
 				break;
 			case 3:
-				U64SetBit(board->pieces_BB + Queen, 0, move.bit_to, OFF);
+				U64SetBitOff(board->pieces_BB + Queen, 0, move.bit_to);
 				break;
 		}
 	}
@@ -922,13 +985,13 @@ void undoMove(Global* global, Board* board, Move move, U16 castling_flags, U16 E
 	switch(move.move_type){
 
 		case ShortCastle:
-			setPiece(board, color, Rook, 0, move.bit_from + 3, ON);
-			setPiece(board, color, Rook, 0, move.bit_from + 1, OFF);
+			setPieceOn(board, color, Rook, 0, move.bit_from + 3);
+			setPieceOff(board, color, Rook, 0, move.bit_from + 1);
 			break;
 
 		case LongCastle:
-			setPiece(board, color, Rook, 0, move.bit_from - 4, ON);
-			setPiece(board, color, Rook, 0, move.bit_from - 1, OFF);
+			setPieceOn(board, color, Rook, 0, move.bit_from - 4);
+			setPieceOff(board, color, Rook, 0, move.bit_from - 1);
 			break;
 	}
 
@@ -939,9 +1002,9 @@ void undoMove(Global* global, Board* board, Move move, U16 castling_flags, U16 E
 	return;
 }
 
-U16 isInCheck(Global* global, Board* board, U16 king_bit){
+U8 isInCheck(Global* global, Board* board, U8 king_bit){
 
-	U16 checks, turn, opp_turn, color, opp_color, 
+	U8 checks, turn, opp_turn, color, opp_color, 
 		king_rank, king_file, ray_rank, ray_file, piece;
 	U64 knight_checks;
 
@@ -987,7 +1050,7 @@ U16 isInCheck(Global* global, Board* board, U16 king_bit){
 	king_rank = king_bit / 8;
 	king_file = king_bit % 8;
 
-	for(U16 direction = 0; direction < 8; direction++){
+	for(U8 direction = 0; direction < 8; direction++){
 
 		ray_rank = king_rank + delta_rank[direction];
 		ray_file = king_file + delta_file[direction];
@@ -1020,10 +1083,10 @@ U16 isInCheck(Global* global, Board* board, U16 king_bit){
 	return checks;
 }
 
-void perftResults(Global* global, Board* board, U64** results, U16 current_depth, U16 max_depth){
+void perftResults(Global* global, Board* board, U64** results, U8 current_depth, U8 max_depth){
 
 	Move* move_list;
-	U16 length, castling_rights, EP_files, num_checks;
+	U8 length, castling_rights, EP_files, num_checks;
 
 	// Update results from last layer
 	if (current_depth == 0){
@@ -1056,10 +1119,10 @@ void perftResults(Global* global, Board* board, U64** results, U16 current_depth
 	results[current_depth][0] += length;
 
 	// Update results array
-	for(U16 i = 0; i < length; i++){
+	for(U8 i = 0; i < length; i++){
 
 		// Captures
-		if (U16GetBit(move_list[i].move_type, 0, 2))
+		if (isCapture(move_list[i]))
 			results[current_depth][1] += 1;
 
 		// EP
@@ -1071,7 +1134,7 @@ void perftResults(Global* global, Board* board, U64** results, U16 current_depth
 			results[current_depth][3] += 1;
 
 		// Promotions
-		if (U16GetBit(move_list[i].move_type, 0, 3))
+		if (isPromo(move_list[i]))
 			results[current_depth][4] += 1;
 	}
 
@@ -1085,7 +1148,7 @@ void perftResults(Global* global, Board* board, U64** results, U16 current_depth
 	castling_rights = board->castling_flags;
 	EP_files 		= board->EP_flags;
 
-	for(U16 i = 0; i < length; i++){
+	for(U8 i = 0; i < length; i++){
 
 		makeMove(global, board, move_list[i]);
 		perftResults(global, board, results, current_depth + 1, max_depth);
@@ -1096,9 +1159,9 @@ void perftResults(Global* global, Board* board, U64** results, U16 current_depth
 	return;
 }
 
-U64 perftBenchmark(Global* global, Board* board, U16 depth){
+U64 perftBenchmark(Global* global, Board* board, U8 depth){
 
-	U16 length, castling_rights, EP_files;
+	U8 length, castling_rights, EP_files;
 	U64 total_nodes = 0;
 	Move* move_list = legalMoveGenerator(global, board, &length, isInCheck(global, board, 64));
 
@@ -1112,7 +1175,7 @@ U64 perftBenchmark(Global* global, Board* board, U16 depth){
 	castling_rights = board->castling_flags;
 	EP_files 		= board->EP_flags;
 
-	for(U16 i = 0; i < length; i++){
+	for(U8 i = 0; i < length; i++){
 
 		makeMove(global, board, move_list[i]);
 		total_nodes += perftBenchmark(global, board, depth-1);
@@ -1123,7 +1186,7 @@ U64 perftBenchmark(Global* global, Board* board, U16 depth){
 	return total_nodes;
 }
 
-void initPerft(Global* global, Board* board, U16 max_depth, U16 do_results){
+void initPerft(Global* global, Board* board, U8 max_depth, U8 do_results){
 
 	// Ensure legitimate input
 	if (max_depth == 0){
@@ -1148,7 +1211,7 @@ void initPerft(Global* global, Board* board, U16 max_depth, U16 do_results){
 
 	// Store perft() results in array
 	U64** results = (U64**)malloc(max_depth * sizeof(U64*));
-	for(U16 i = 0; i < max_depth; i++)
+	for(U8 i = 0; i < max_depth; i++)
 		results[i] = (U64*)calloc(8, sizeof(U64));
 
 	/*	Result codes:
@@ -1167,7 +1230,7 @@ void initPerft(Global* global, Board* board, U16 max_depth, U16 do_results){
 	// Print output
 	printf("%5s %11s %11s %11s %11s %11s %11s %11s %11s\n",
 			"Depth", "Nodes", "Captures", "EPs", "Castles", "Promos", "Checks", "2Checks", "Checkmates");
-	for(U16 i = 0; i < max_depth; i++)
+	for(U8 i = 0; i < max_depth; i++)
 
 		if (i == max_depth-1)
 			printf("%5u %11llu %11llu %11llu %11llu %11llu %11s %11s %11s\n",
@@ -1180,7 +1243,7 @@ void initPerft(Global* global, Board* board, U16 max_depth, U16 do_results){
 					results[i][4], results[i][5], results[i][6], results[i][7]);
 
 	// Free memory
-	for(U16 i = 0; i < max_depth; i++)
+	for(U8 i = 0; i < max_depth; i++)
 		free(results[i]);
 	free(results);
 
@@ -1200,12 +1263,12 @@ void longPerftDebug(Global* global, Board* board){
 								  89941194ULL,
 								  164075551ULL};
 
-	U16 accepted_depths[] = {6,
-							 5,
-							 7,
-							 5,
-							 5,
-							 5};
+	U8 accepted_depths[] = {6,
+							5,
+							7,
+							5,
+							5,
+							5};
 
 	char* FEN_strings[] = {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
 						   "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -",
@@ -1214,10 +1277,10 @@ void longPerftDebug(Global* global, Board* board){
 						   "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
 						   "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10"};
 
-	U16 length = 6;
+	U8 length = 6;
 
 	U64 total_nodes;
-	for(U16 i = 3; i < length; i++){
+	for(U8 i = 3; i < length; i++){
 
 		printf("Performing perft #%hu / %hu...\n", i+1, length);
 		loadFEN(board, FEN_strings[i]);
@@ -1241,7 +1304,7 @@ void longPerftDebug(Global* global, Board* board){
 void compareBoards(Board* board_1, Board* board_2, char* move_name, char* func_name){
 
 	// Compare bitboards
-	for(U16 i = Pawn; i <= Black; i++)
+	for(U8 i = Pawn; i <= Black; i++)
 		if (board_1->pieces_BB[i] != board_2->pieces_BB[i]){
 
 			printf("%s error for %s:\n", func_name, move_name);
@@ -1275,7 +1338,7 @@ void debugBoard(Global* global, Board* board, Move move, char* move_name){
 	memcpy(original_board, board, sizeof(Board));
 
 	// isInCheck()
-	U16 num_checks = isInCheck(global, board, 64);
+	U8 num_checks = isInCheck(global, board, 64);
 	compareBoards(board, original_board, move_name, "isInCheck()");
 
 	// validateMove()
@@ -1283,13 +1346,13 @@ void debugBoard(Global* global, Board* board, Move move, char* move_name){
 	compareBoards(board, original_board, move_name, "validateMove()");
 
 	// legalMoveGenerator()
-	U16 length;
+	U8 length;
 	legalMoveGenerator(global, board, &length, num_checks);
 	compareBoards(board, original_board, move_name, "legalMoveGenerator()");
 
 	// makeMove() && undoMove()
-	U16 castling_rights = board->castling_flags;
-	U16 EP_files = board->EP_flags;
+	U8 castling_rights = board->castling_flags;
+	U8 EP_files = board->EP_flags;
 	makeMove(global, board, move);
 	undoMove(global, board, move, castling_rights, EP_files);
 	compareBoards(board, original_board, move_name, "makeMove() && undoMove()");
@@ -1297,10 +1360,10 @@ void debugBoard(Global* global, Board* board, Move move, char* move_name){
 	return;
 }
 
-U16 bitFromAlgeb(char* algebraic){
+U8 bitFromAlgeb(char* algebraic){
 
-	U16 file = algebraic[0] - 97;
-	U16 rank = algebraic[1] - 1;
+	U8 file = algebraic[0] - 97;
+	U8 rank = algebraic[1] - 1;
 
 	return 8*rank + file;
 }
@@ -1716,7 +1779,7 @@ void movePrinter(Global* global, Board* board){
 
 	Move move;
 	Move* moveList;
-	U16 length;
+	U8 length;
 	char UCI_string[30], moved[30], move_type[30], promo[30], captured[30];
 	moveList = legalMoveGenerator(global, board, &length, isInCheck(global, board, 64));
 

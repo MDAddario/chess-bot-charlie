@@ -1,58 +1,32 @@
 #define ON  1
 #define OFF 0
 
-/*	Bitboard chessboard layout (feat. original chess coords)
- *	
- *	56	57	58	59	60	61	62	63		8
- *	48	49	50	51	52	53	54	55		7
- *	40	41	42	43	44	45	46	47		6
- *	32	33	34	35	36	37	38	39		5
- *	24	25	26	27	28	29	30	31		4
- *	16	17	18	19	20	21	22	23		3
- *	8	9	10	11	12	13	14	15		2
- *	0	1	2	3	4	5	6	7		1
- *
- *	A	B 	C 	D 	E 	F 	G 	H
- *
- * Access bit k by: 1ULL << k
- */
-
-/* When moving a piece, bit shift amount
- * simply depends on direction of shift
- *
- *			(+7)  (+8)	(+9)
- *				  \	| / 
- *			(-1) <- 0 -> (+1)
- *				  /	| \
- *			(-9)  (-8)	(-7)
- *
- * The compass rose of bitwise chess
- */
-
-// 64 bits correspond to 64 squares on CBoard
+// Integer types
 typedef unsigned long long U64;
-
-// Other integer types
-typedef unsigned short U16;
-typedef signed short S16;
-typedef unsigned int U32;
+typedef   signed long long S64;
+typedef unsigned       int U32;
+typedef   signed       int S32;
+typedef unsigned     short U16;
+typedef   signed     short S16;
+typedef unsigned       char U8;
+typedef   signed       char S8;
 
 // Encodes all the information of a chess move
 typedef struct StructMove{
 
-	U16 bit_from;
-	// Initial bit (original bit)
+	U8 bit_from;
+	// Initial bit
 
-	U16 bit_to;
-	// Final bit (destination bit)
+	U8 bit_to;
+	// Final bit
 
-	U16 move_type;
-	// Integer denotes kind of move (enum MoveEncoding)
+	U8 move_type;
+	// Integer denotes kind of move (see enum MoveEncoding)
 
-	U16 moving_piece;
+	U8 moving_piece;
 	// Index for moving piece
 
-	U16 captured_piece;
+	U8 captured_piece;
 	// Index for captured piece
 
 } Move;
@@ -79,12 +53,12 @@ typedef struct StructBoardState{
 	// Six for pieces (enum BBIndex)
 	// Two for colors (enum BBIndex)
 
-	U16 castling_flags;
+	U8 castling_flags;
 	// First four bits (enum CastlingKeys)
 	// White short, long
 	// Black short, long
 
-	U16 EP_flags;
+	U8 EP_flags;
 	// First 8 bits for 8 files
 
 	U16 ply;
@@ -110,8 +84,6 @@ enum TurnIndex{
 	BlackTurn,	// 0
 	WhiteTurn	// 1
 };
-
-// Note BlackTurn is 0, as turn is computed as (ply % 2)
 
 // Castling keys
 enum CastlingKeys{
@@ -141,8 +113,9 @@ enum MoveEncoding{
 	QPromoCapture	// 15
 };
 
-// Move codes retrieved from https://www.chessprogramming.org/Encoding_Moves
-/* Codes set such that
+/* Move codes retrieved from: https://www.chessprogramming.org/Encoding_Moves
+ * 
+ * Codes set such that
  * Promotion 	-> Bit 3
  * Capture 		-> Bit 2
  * n/a			-> Bit 1
@@ -151,38 +124,48 @@ enum MoveEncoding{
  * 6 and 7 are placeholders
  */
 
-// Set bit on U64
-static inline void U64SetBit(U64*, U16, U16, U16);
-/* If you want to set by bit index
- * instead of row and col, set 
- * row = 0 and col = bit
+/*	Setters:
+ *		If you want to set by bit index instead of rank and file,
+ *		use rank=0 and file=bit
+ */ 
+
+/*	Getters:
+ *		Return codes:
+ *		0: Bit off at given location
+ *		1: Bit on at given location
  */
 
-// Get bit on U64
-static inline U16 U64GetBit(U64, U16, U16);
-/* Return codes:
- * 1: Piece in BB at (rank, file)
- * 0: No piece in BB at (rank, file)
- */
+// Setters
+static inline void U64SetBitOn(U64*, U8, U8);
+static inline void U64SetBitOff(U64*, U8, U8);
+static inline void U8SetBitOn(U8*, U8);
+static inline void U8SetBitOff(U8*, U8);
 
-// Setter and getter for U16
-static inline void U16SetBit(U16*, U16, U16, U16);
-static inline U16 U16GetBit(U16, U16, U16);
+// Getters
+static inline U8 U64GetBit(U64, U8, U8);
+static inline U8 U8GetBit(U8, U8);
 
-// Determine if move is a promotion
-static inline U16 isPromo(Move);
+// Determine if move is a promotion or capture
+static inline U8 isPromo(Move);
+static inline U8 isCapture(Move);
 
-// Determine if move is a capture
-static inline U16 isCapture(Move);
+// Setters and getters for castling and EP flags
+static inline void setCastleFlagOn(Board*, U8);
+static inline void setCastleFlagOff(Board*, U8);
+static inline void setEPFlagOn(Board*, U8);
+static inline void setEPFlagOff(Board*, U8);
+static inline U8 getCastlingFlag(Board*, U8);
+static inline U8 getEPFlag(Board*, U8);
 
-// More simplified functions
-static inline void setCastleFlag(Board*, U16, U16);
-static inline void setEPFlag(Board*, U16, U16);
-static inline U16 getCastlingFlag(Board*, U16);
-static inline U16 getEPFlag(Board*, U16);
+// Setting all flags at once
+static inline void clearAllPiecesBB(Board*);
+static inline void lowerAllCastlingFlags(Board*);
+static inline void raiseAllCastlingFlags(Board*);
+static inline void lowerAllEPFlags(Board*);
 
 // Set piece on board by color and piece type
-static inline void setPiece(Board*, U16, U16, U16, U16, U16);
+static inline void setPieceOn(Board*, U8, U8, U8, U8);
+static inline void setPieceOff(Board*, U8, U8, U8, U8);
 
 // Print BB
 void BBPrint(U64);
@@ -204,44 +187,40 @@ char* filenames_capture[2][6];
 char* filenames_quiet[2][6];
 
 // Check if rank and file within board dims
-static inline U16 isRankFileInBounds(U16, U16);
+U8 isRankFileInBounds(U8, U8);
 /* Return codes:
  * 1: Piece in bounds at (rank, file)
  * 0: Piece not in bounds at (rank, file)
  */
 
 // Return moveList without validating for check
-Move* pseudoMoveGenerator(Global*, Board*, U16*, U16);
+Move* pseudoMoveGenerator(Global*, Board*, U8*, U8);
 
 // Return moveList while validating for check
-Move* legalMoveGenerator(Global*, Board*, U16*, U16);
+Move* legalMoveGenerator(Global*, Board*, U8*, U8);
 
 // Basis vectors for scanning sliding moves
-S16 delta_rank[8];
-S16 delta_file[8];
+S8 delta_rank[8];
+S8 delta_file[8];
 
 // Configure all attributes of Move struct
-static inline void configureMove(Move*, U16, U16, U16, U16, U16);
+static inline void configureMove(Move*, U8, U8, U8, U8, U8);
 
 // Determine if move is legal
-U16 validateMove(Global*, Board*, Move);
+U8 validateMove(Global*, Board*, Move);
 /* Return codes:
  * 0: Illegal move
  * 1: Legal move
  */
 
 // Execute move and increment ply, update castle and EP flags
-U16 makeMove(Global*, Board*, Move);
-/* Return codes:
- * 1: Move successful
- * 0: Move illegal (only when do_validate == 1)
- */
+void makeMove(Global*, Board*, Move);
 
 // Undo move, reset ply, castling, and EP flags
-void undoMove(Global*, Board*, Move, U16, U16);
+void undoMove(Global*, Board*, Move, U8, U8);
 
 // Verify if current-turn player in check
-U16 isInCheck(Global*, Board*, U16);
+U8 isInCheck(Global*, Board*, U8);
 /* Return codes:
  * 0: Not in check
  * 1: Check (can capture checking piece, intercept, or move king)
@@ -251,13 +230,13 @@ U16 isInCheck(Global*, Board*, U16);
  */
 
 // (PERF)ormance (T)est to test move generation, up to 3-fold and 50-move
-void perftResults(Global*, Board*, U64**, U16, U16);
+void perftResults(Global*, Board*, U64**, U8, U8);
 
 // Benchmark perft() to only count nodes
-U64 perftBenchmark(Global*, Board*, U16);
+U64 perftBenchmark(Global*, Board*, U8);
 
 // Initial call for perft() function
-void initPerft(Global*, Board*, U16, U16);
+void initPerft(Global*, Board*, U8, U8);
 
 // Extensive comparison to existing perft results
 void longPerftDebug(Global*, Board*);
@@ -269,7 +248,7 @@ void compareBoards(Board*, Board*, char*, char*);
 void debugBoard(Global*, Board*, Move, char*);
 
 // Convert algebraic coordinates to bit
-U16 bitFromAlgeb(char*);
+U8 bitFromAlgeb(char*);
 
 // Test that bits correspond to proper move types
 void bitTesting();
@@ -285,6 +264,14 @@ void movePrinter(Global*, Board*);
 
 /***************************************
 * TO DO LIST:
+*
+* - Have a function for tracking castling_flags and EP_flags
+*
+* - Consider U64GetBit by bit only, not rank and file
+*
+* - Consider U64SetOn and U64SetOff instead of the toggle
+*
+* - Resolve static inline issues for U64SetBit() and isRankFileInBounds()
 *
 * - Look into hex 0x integer notation
 *
@@ -314,20 +301,18 @@ void movePrinter(Global*, Board*);
 *
 * - Reorder functions in chess_framework files
 *
-* - Tidy up Makefile
-* - Add standardized perft() benchmark
+* - Tidy up Makefile and files
 *
 * - Make sure all declared variables in pseudoMoveGenerator() are used
 * 
-* - Manage #define collection
 * - Compress moveToUCI by using the ascii values of a-h and 1-8
 *
-* - Consider compressing memory in Board and Move structs
+* - Compress memory in Board and Move structs
 * - Implement U8 and S8 data types
 *
 * - Potentially keep track of king bits
 * - Consider setting Global* and Board* as global variables
-* - Consider copyMake() approach
+*
 * - Make sure all used data types are appropriate
 *
 * - Inside makeMove(), consider a more efficient piece movement by
