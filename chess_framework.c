@@ -1022,10 +1022,6 @@ U16 isInCheck(Global* global, Board* board, U16 king_bit){
 
 void perftResults(Global* global, Board* board, U64** results, U16 current_depth, U16 max_depth){
 
-	/*
-	https://www.chessprogramming.org/Perft_Results
-	*/
-
 	Move* move_list;
 	U16 length, castling_rights, EP_files, num_checks;
 
@@ -1101,10 +1097,6 @@ void perftResults(Global* global, Board* board, U64** results, U16 current_depth
 }
 
 U64 perftBenchmark(Global* global, Board* board, U16 depth){
-
-	/*
-	https://www.chessprogramming.org/Perft_Results
-	*/
 
 	U16 length, castling_rights, EP_files;
 	U64 total_nodes = 0;
@@ -1192,6 +1184,57 @@ void initPerft(Global* global, Board* board, U16 max_depth, U16 do_results){
 		free(results[i]);
 	free(results);
 
+	return;
+}
+
+void longPerftDebug(Global* global, Board* board){
+
+	/*
+	https://www.chessprogramming.org/Perft_Results
+	*/
+
+	U64 accepted_node_counts[] = {119060324ULL,
+								  193690690ULL,
+								  178633661ULL,
+								  15833292ULL,
+								  89941194ULL,
+								  164075551ULL};
+
+	U16 accepted_depths[] = {6,
+							 5,
+							 7,
+							 5,
+							 5,
+							 5};
+
+	char* FEN_strings[] = {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+						   "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -",
+						   "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -",
+						   "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
+						   "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
+						   "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10"};
+
+	U16 length = 6;
+
+	U64 total_nodes;
+	for(U16 i = 3; i < length; i++){
+
+		printf("Performing perft #%hu / %hu...\n", i+1, length);
+		loadFEN(board, FEN_strings[i]);
+		total_nodes = perftBenchmark(global, board, accepted_depths[i]);
+
+		if (total_nodes == accepted_node_counts[i]){
+			printf("Perft #%hu successful.\n\n", i+1);
+			continue;
+		}
+		else{
+			printf("Perft #%hu failed.\n\n", i+1);
+			printf("Program determined %llu nodes.\n", total_nodes);
+			printf("Accepted value is %llu nodes.\n", accepted_node_counts[i]);
+			return;
+		}
+	}
+	printf("Successfully completed all %hu perfts.\n", length);
 	return;
 }
 

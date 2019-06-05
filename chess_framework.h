@@ -259,6 +259,9 @@ U64 perftBenchmark(Global*, Board*, U16);
 // Initial call for perft() function
 void initPerft(Global*, Board*, U16, U16);
 
+// Extensive comparison to existing perft results
+void longPerftDebug(Global*, Board*);
+
 // Debugging tool to compare boards
 void compareBoards(Board*, Board*, char*, char*);
 
@@ -288,9 +291,8 @@ void movePrinter(Global*, Board*);
 *
 * - Isolate moveGen() for bishop/rook/queen?????
 *
-* - Load turn specific things into global struct
-*
-* - Add perft() for only node count
+* - Load turn specific things (turn, color, opp_color) into global struct
+*		- Increment the active set of values in makeMove() / undoMove()
 *
 * - Try and remove all raw use of UxxGetBit or UxxSetBit, cover them up in helper functions
 *
@@ -325,20 +327,37 @@ void movePrinter(Global*, Board*);
 * - Consider copyMake() approach
 * - Make sure all used data types are appropriate
 *
+* - Inside makeMove(), consider a more efficient piece movement by
+* 	having a bitmask that has bit_from and bit_to as the only active
+*	bits, and XOR that mask with the corresponding colorBB and pieceBB
+*	for the moving piece to makeMove()
+*
 * - Add .bmp output
 *
 ****************************************/
 
-// Inside makeMove():
 
-/*
-CONSIDER A MORE EFFICIENT PIECE MOVEMENT, i.e. HAVE
-A BITMASK THAT HAS bit_from AND bit_to AS THE ONLY
-1 BITS, AND XOR THAT MASK WITH THE CORRESPONDING
-colorBB and pieceBB FOR THE MOVING PIECE
-*/
 
-/*
-CONSIDER EMBEDDING turn, color, opp_color INTO BOARD
-STATE. THEN, ONE WOULD UPDATE THEM IN makeMove
-*/
+/******************************************\
+*
+*	ERRORS IN MOVE GENERATION FUNCTIONS:
+*
+*	(List of all chess logic errors that
+*	have been since fixed. This excludes
+*	all comp-sci specific bugs)
+*
+*	- Long castle would use a phantom rook from
+*		B-file instead of A-file
+*
+*	- makeMove and undoMove would update moving
+*		and captured pieces in wrong order,
+*		generating phantom pieces when undoing
+*		en passant captures
+*
+*	- isInCheck would not look for knight checks
+*		in certain cases, would allow for king
+*		to stay in check
+*
+*
+*
+\******************************************/

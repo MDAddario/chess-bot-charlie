@@ -12,10 +12,16 @@ int main(int argc, char* argv[]){
 
 	// Load board state
 	Board* board = (Board*)malloc(sizeof(Board));
-	//BoardStart(board);
+	BoardStart(board);
 
+	// Test against known perft results
+	longPerftDebug(global, board);
+	return 0;
+
+	/*
 	// Load FEN string
-	loadFEN(board, "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1");
+	loadFEN(board, "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1 ");
+	*/
 
 	// Perft testing
 	if (argc < 2){
