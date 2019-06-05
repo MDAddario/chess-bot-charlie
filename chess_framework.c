@@ -41,16 +41,26 @@ U16 isCapture(Move move){
 	return U16GetBit(move.move_type, 0, 2);
 }
 
-void setEPFlag(Board* board, U16 bit, U16 toggle){
+void setCastlingFlag(Board* board, U16 bit, U16 toggle){
 
 	U16SetBit(&(board->castling_flags), 0, bit, toggle);
 	return;
 }
 
-void toggleEPFlag(Board* board, U16 bit, U16 toggle){
+void setEPFlag(Board* board, U16 bit, U16 toggle){
 
 	U16SetBit(&(board->EP_flags), 0, bit, toggle);
 	return;
+}
+
+U16 getCastlingFlag(Board* board, U16 bit){
+
+	return U16GetBit(board->castling_flags, 0, bit);
+}
+
+U16 getEPFlag(Board* board, U16 bit){
+
+	return U16GetBit(board->EP_flags, 0, bit);
 }
 
 void setPiece(Board* board, U16 color, U16 piece, U16 rank, U16 file, U16 toggle){
@@ -144,11 +154,11 @@ void loadFEN(Board* board, char* FEN_string){
 
 	// Castling rights
 	for (U16 i = 0; i < 4; i++)
-		setEPFlag(board, i, OFF);
+		setCastlingFlag(board, i, OFF);
 
 	// EP rights
 	for (U16 i = 0; i < 8; i++)
-		toggleEPFlag(board, i, OFF);
+		setEPFlag(board, i, OFF);
 
 	// Parse piece layout
 	char* cptr = FEN_string;
@@ -224,16 +234,16 @@ void loadFEN(Board* board, char* FEN_string){
 			switch(*cptr){
 							
 				case 'K':
-					setEPFlag(board, ShortW, ON);
+					setCastlingFlag(board, ShortW, ON);
 					break;
 				case 'Q':
-					setEPFlag(board, LongW, ON);
+					setCastlingFlag(board, LongW, ON);
 					break;
 				case 'k':
-					setEPFlag(board, ShortB, ON);
+					setCastlingFlag(board, ShortB, ON);
 					break;
 				case 'q':
-					setEPFlag(board, LongB, ON);
+					setCastlingFlag(board, LongB, ON);
 					break;
 			}
 			cptr++;
@@ -245,22 +255,29 @@ void loadFEN(Board* board, char* FEN_string){
 
 	// EP flag
 	if (*cptr != '-'){
-		toggleEPFlag(board, *cptr-97, ON);
+		setEPFlag(board, *cptr-97, ON);
 		cptr += 2;
 	}
 	else
 		cptr++;
 
-	if(*cptr == '\0')
+	if (*cptr == '\0')
 		return;
 	cptr++;
+
+	if (*cptr == '\0')
+		return;
 
 	// Halfmove clock DOES NOT CURRENTLY HAVE FUNCTIONALITY HERE.
 
 	cptr++;
-	if(*cptr == '\0')
+
+	if (*cptr == '\0')
 		return;
 	cptr++;
+
+	if (*cptr == '\0')
+		return;
 
 	// Fullmove counter
 	board->ply += 2*(*cptr - 49);
@@ -467,7 +484,7 @@ Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_che
 
 							// To the left
 							if (isRankFileInBounds(rank_from, file_from - 1))
-								if (U16GetBit(board->EP_flags, 0, file_from - 1)){
+								if (getEPFlag(board, file_from-1)){
 
 									configureMove(list+*length, bit_from, bit_from + pawn_EP_left_bitshift, EPCapture, Pawn, Pawn);
 									(*length)++;
@@ -475,7 +492,7 @@ Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_che
 
 							// To the right
 							if (isRankFileInBounds(rank_from, file_from + 1))
-								if (U16GetBit(board->EP_flags, 0, file_from + 1)){
+								if (getEPFlag(board, file_from+1)){
 
 									configureMove(list+*length, bit_from, bit_from + pawn_EP_right_bitshift, EPCapture, Pawn, Pawn);
 									(*length)++;
@@ -533,7 +550,7 @@ Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_che
 
 						// Castling
 						if (num_checks == 0){
-							if (U16GetBit(board->castling_flags, 0, short_key)){
+							if (getCastlingFlag(board, short_key)){
 
 								if (U64GetBit(empty_BB, 0, bit_from + 1) 
 									&& U64GetBit(empty_BB, 0, bit_from + 2)){
@@ -542,7 +559,7 @@ Move* pseudoMoveGenerator(Global* global, Board* board, U16* length, U16 num_che
 									(*length)++;
 								}
 							}
-							if (U16GetBit(board->castling_flags, 0, long_key)){
+							if (getCastlingFlag(board, long_key)){
 
 								if (U64GetBit(empty_BB, 0, bit_from - 1) 
 									&& U64GetBit(empty_BB, 0, bit_from - 2) 
@@ -780,24 +797,24 @@ U16 makeMove(Global* global, Board* board, Move move){
 
 	// Update castling flags
 	if (move.bit_from == 4){						// White king bit
-		setEPFlag(board, LongW, OFF);
-		setEPFlag(board, ShortW, OFF);
+		setCastlingFlag(board, LongW, OFF);
+		setCastlingFlag(board, ShortW, OFF);
 	}
 	if (move.bit_from == 60){						// Black king bit
-		setEPFlag(board, LongB, OFF);
-		setEPFlag(board, ShortB, OFF);
+		setCastlingFlag(board, LongB, OFF);
+		setCastlingFlag(board, ShortB, OFF);
 	}
 	if (move.bit_from == 0 || move.bit_to == 0)		// White queen rook bit
-		setEPFlag(board, LongW, OFF);
+		setCastlingFlag(board, LongW, OFF);
 
 	if (move.bit_from == 7 || move.bit_to == 7)		// White king rook bit
-		setEPFlag(board, ShortW, OFF);
+		setCastlingFlag(board, ShortW, OFF);
 	
 	if (move.bit_from == 56 || move.bit_to == 56)	// Black queen rook bit
-		setEPFlag(board, LongB, OFF);
+		setCastlingFlag(board, LongB, OFF);
 	
 	if (move.bit_from == 63 || move.bit_to == 63)	// Black king rook bit
-		setEPFlag(board, ShortB, OFF);
+		setCastlingFlag(board, ShortB, OFF);
 
 	// Check for promotion
 	if (isPromo(move)){
@@ -823,7 +840,7 @@ U16 makeMove(Global* global, Board* board, Move move){
 
 	// Reset EP flags
 	for (U16 i = 0; i < 8; i++)
-		toggleEPFlag(board, i, OFF);
+		setEPFlag(board, i, OFF);
 
 	// Special cases
 	switch(move.move_type){

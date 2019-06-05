@@ -178,6 +178,8 @@ U16 isCapture(Move);
 // More simplified functions
 void setCastleFlag(Board*, U16, U16);
 void setEPFlag(Board*, U16, U16);
+U16 getCastlingFlag(Board*, U16);
+U16 getEPFlag(Board*, U16);
 
 // Set piece on board by color and piece type
 void setPiece(Board*, U16, U16, U16, U16, U16);
@@ -286,6 +288,8 @@ void movePrinter(Global*, Board*);
 * - Load turn specific things into global struct
 *
 * - Add perft() for only node count
+*
+* - Try and remove all raw use of UxxGetBit or UxxSetBit, cover them up in helper functions
 *
 * - 3 fold repetition
 * - 50 move draw
