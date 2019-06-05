@@ -152,37 +152,37 @@ enum MoveEncoding{
  */
 
 // Set bit on U64
-void U64SetBit(U64*, U16, U16, U16);
+static inline void U64SetBit(U64*, U16, U16, U16);
 /* If you want to set by bit index
  * instead of row and col, set 
  * row = 0 and col = bit
  */
 
 // Get bit on U64
-U16 U64GetBit(U64, U16, U16);
+static inline U16 U64GetBit(U64, U16, U16);
 /* Return codes:
  * 1: Piece in BB at (rank, file)
  * 0: No piece in BB at (rank, file)
  */
 
 // Setter and getter for U16
-void U16SetBit(U16*, U16, U16, U16);
-U16 U16GetBit(U16, U16, U16);
+static inline void U16SetBit(U16*, U16, U16, U16);
+static inline U16 U16GetBit(U16, U16, U16);
 
 // Determine if move is a promotion
-U16 isPromo(Move);
+static inline U16 isPromo(Move);
 
 // Determine if move is a capture
-U16 isCapture(Move);
+static inline U16 isCapture(Move);
 
 // More simplified functions
-void setCastleFlag(Board*, U16, U16);
-void setEPFlag(Board*, U16, U16);
-U16 getCastlingFlag(Board*, U16);
-U16 getEPFlag(Board*, U16);
+static inline void setCastleFlag(Board*, U16, U16);
+static inline void setEPFlag(Board*, U16, U16);
+static inline U16 getCastlingFlag(Board*, U16);
+static inline U16 getEPFlag(Board*, U16);
 
 // Set piece on board by color and piece type
-void setPiece(Board*, U16, U16, U16, U16, U16);
+static inline void setPiece(Board*, U16, U16, U16, U16, U16);
 
 // Print BB
 void BBPrint(U64);
@@ -204,7 +204,7 @@ char* filenames_capture[2][6];
 char* filenames_quiet[2][6];
 
 // Check if rank and file within board dims
-U16 isRankFileInBounds(U16, U16);
+static inline U16 isRankFileInBounds(U16, U16);
 /* Return codes:
  * 1: Piece in bounds at (rank, file)
  * 0: Piece not in bounds at (rank, file)
@@ -221,7 +221,7 @@ S16 delta_rank[8];
 S16 delta_file[8];
 
 // Configure all attributes of Move struct
-void configureMove(Move*, U16, U16, U16, U16, U16);
+static inline void configureMove(Move*, U16, U16, U16, U16, U16);
 
 // Determine if move is legal
 U16 validateMove(Global*, Board*, Move);
@@ -286,8 +286,11 @@ void movePrinter(Global*, Board*);
 /***************************************
 * TO DO LIST:
 *
-* - Check if C has inline functions
-* - Learn ifdef
+* - Look into hex 0x integer notation
+*
+* - Instead of using bits as integers, only use U64s to make comparisons faster
+*
+* - Preload sliding bitboards and king space bitboards from all starting bits
 *
 * - Isolate moveGen() for bishop/rook/queen?????
 *

@@ -14,9 +14,11 @@ int main(int argc, char* argv[]){
 	Board* board = (Board*)malloc(sizeof(Board));
 	BoardStart(board);
 
+	/*
 	// Test against known perft results
 	longPerftDebug(global, board);
 	return 0;
+	*/
 
 	/*
 	// Load FEN string

@@ -4,7 +4,7 @@
 #include <time.h>
 #include "chess_framework.h"
 
-void U64SetBit(U64* BB, U16 rank, U16 file, U16 toggle){
+static inline void U64SetBit(U64* BB, U16 rank, U16 file, U16 toggle){
 
 	if (toggle)
 		*BB |= 1ULL << rank*8 + file;
@@ -13,12 +13,12 @@ void U64SetBit(U64* BB, U16 rank, U16 file, U16 toggle){
 	return;
 }
 
-U16 U64GetBit(U64 BB, U16 rank, U16 file){
+static inline U16 U64GetBit(U64 BB, U16 rank, U16 file){
 
 	return BB >> rank*8 + file & 1ULL;
 }
 
-void U16SetBit(U16* number, U16 rank, U16 file, U16 toggle){
+static inline void U16SetBit(U16* number, U16 rank, U16 file, U16 toggle){
 
 	if (toggle)
 		*number |= 1 << rank*8 + file;
@@ -27,44 +27,44 @@ void U16SetBit(U16* number, U16 rank, U16 file, U16 toggle){
 	return;
 }
 
-U16 U16GetBit(U16 number, U16 rank, U16 file){
+static inline U16 U16GetBit(U16 number, U16 rank, U16 file){
 
 	return number >> rank*8 + file & 1;
 }
 
-U16 isPromo(Move move){
+static inline U16 isPromo(Move move){
 
 	return U16GetBit(move.move_type, 0, 3);
 }
 
-U16 isCapture(Move move){
+static inline U16 isCapture(Move move){
 
 	return U16GetBit(move.move_type, 0, 2);
 }
 
-void setCastlingFlag(Board* board, U16 bit, U16 toggle){
+static inline void setCastlingFlag(Board* board, U16 bit, U16 toggle){
 
 	U16SetBit(&(board->castling_flags), 0, bit, toggle);
 	return;
 }
 
-void setEPFlag(Board* board, U16 bit, U16 toggle){
+static inline void setEPFlag(Board* board, U16 bit, U16 toggle){
 
 	U16SetBit(&(board->EP_flags), 0, bit, toggle);
 	return;
 }
 
-U16 getCastlingFlag(Board* board, U16 bit){
+static inline U16 getCastlingFlag(Board* board, U16 bit){
 
 	return U16GetBit(board->castling_flags, 0, bit);
 }
 
-U16 getEPFlag(Board* board, U16 bit){
+static inline U16 getEPFlag(Board* board, U16 bit){
 
 	return U16GetBit(board->EP_flags, 0, bit);
 }
 
-void setPiece(Board* board, U16 color, U16 piece, U16 rank, U16 file, U16 toggle){
+static inline void setPiece(Board* board, U16 color, U16 piece, U16 rank, U16 file, U16 toggle){
 
 	U64SetBit(board->pieces_BB + color, rank, file, toggle);
 	U64SetBit(board->pieces_BB + piece, rank, file, toggle);
@@ -363,7 +363,7 @@ char* filenames_quiet[2][6] = {"black_pawn_quiet.txt",
 								"white_queen_quiet.txt",
 								"white_king_quiet.txt"};
 
-U16 isRankFileInBounds(U16 rank, U16 file){
+static inline U16 isRankFileInBounds(U16 rank, U16 file){
 
 	return rank < 8 && file < 8;	// Thanks to unsigned overflow
 }
@@ -674,7 +674,7 @@ Move* legalMoveGenerator(Global* global, Board* board, U16* real_length, U16 num
 	return legal_list;
 }
 
-void configureMove(Move* move, U16 bit_from, U16 bit_to, U16 move_type, U16 moving, U16 captured){
+static inline void configureMove(Move* move, U16 bit_from, U16 bit_to, U16 move_type, U16 moving, U16 captured){
 
 	move->bit_from 		 = bit_from;
 	move->bit_to 		 = bit_to;
