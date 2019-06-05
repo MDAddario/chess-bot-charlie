@@ -251,10 +251,13 @@ U16 isInCheck(Global*, Board*, U16);
  */
 
 // (PERF)ormance (T)est to test move generation, up to 3-fold and 50-move
-void perft(Global*, Board*, U64**, U16, U16);
+void perftResults(Global*, Board*, U64**, U16, U16);
+
+// Benchmark perft() to only count nodes
+U64 perftBenchmark(Global*, Board*, U16);
 
 // Initial call for perft() function
-void initPerft(Global*, Board*, U16);
+void initPerft(Global*, Board*, U16, U16);
 
 // Debugging tool to compare boards
 void compareBoards(Board*, Board*, char*, char*);

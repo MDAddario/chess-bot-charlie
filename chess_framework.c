@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "chess_framework.h"
 
 void U64SetBit(U64* BB, U16 rank, U16 file, U16 toggle){
@@ -1019,7 +1020,7 @@ U16 isInCheck(Global* global, Board* board, U16 king_bit){
 	return checks;
 }
 
-void perft(Global* global, Board* board, U64** results, U16 current_depth, U16 max_depth){
+void perftResults(Global* global, Board* board, U64** results, U16 current_depth, U16 max_depth){
 
 	/*
 	https://www.chessprogramming.org/Perft_Results
@@ -1091,7 +1092,7 @@ void perft(Global* global, Board* board, U64** results, U16 current_depth, U16 m
 	for(U16 i = 0; i < length; i++){
 
 		makeMove(global, board, move_list[i]);
-		perft(global, board, results, current_depth + 1, max_depth);
+		perftResults(global, board, results, current_depth + 1, max_depth);
 		undoMove(global, board, move_list[i], castling_rights, EP_files);
 	}
 
@@ -1099,11 +1100,57 @@ void perft(Global* global, Board* board, U64** results, U16 current_depth, U16 m
 	return;
 }
 
-void initPerft(Global* global, Board* board, U16 max_depth){
+U64 perftBenchmark(Global* global, Board* board, U16 depth){
+
+	/*
+	https://www.chessprogramming.org/Perft_Results
+	*/
+
+	U16 length, castling_rights, EP_files;
+	U64 total_nodes = 0;
+	Move* move_list = legalMoveGenerator(global, board, &length, isInCheck(global, board, 64));
+
+	// Base case
+	if (depth == 1){
+		free(move_list);
+		return length;
+	}
+
+	// Not a leaf node
+	castling_rights = board->castling_flags;
+	EP_files 		= board->EP_flags;
+
+	for(U16 i = 0; i < length; i++){
+
+		makeMove(global, board, move_list[i]);
+		total_nodes += perftBenchmark(global, board, depth-1);
+		undoMove(global, board, move_list[i], castling_rights, EP_files);
+	}
+
+	free(move_list);
+	return total_nodes;
+}
+
+void initPerft(Global* global, Board* board, U16 max_depth, U16 do_results){
 
 	// Ensure legitimate input
 	if (max_depth == 0){
 		printf("Please provide a non-zero depth.\n");
+		return;
+	}
+
+	if (!do_results){
+
+		clock_t t = clock();
+
+		U64 total_nodes = perftBenchmark(global, board, max_depth);
+
+		t = clock() - t;
+		double time_taken = ((double)t)/CLOCKS_PER_SEC;
+
+		printf("Total number of nodes: %llu\n", total_nodes);
+		printf("Time taken to execute: %lf s\n", time_taken); 
+
 		return;
 	}
 
@@ -1123,7 +1170,7 @@ void initPerft(Global* global, Board* board, U16 max_depth){
 	 *	7: Checkmates
 	 */
 
-	perft(global, board, results, 0, max_depth);
+	perftResults(global, board, results, 0, max_depth);
 
 	// Print output
 	printf("%5s %11s %11s %11s %11s %11s %11s %11s %11s\n",
